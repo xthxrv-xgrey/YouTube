@@ -8,11 +8,11 @@ const likeSchema = new mongoose.Schema(
     },
     targetId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Video",
+      refPath: "targetType",
     },
     targetType: {
       type: String,
-      enum: ["video", "comment"],
+      enum: ["video", "comment", "liveStream"],
     },
     value: {
       type: Number,

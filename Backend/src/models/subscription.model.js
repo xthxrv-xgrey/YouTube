@@ -8,7 +8,7 @@ const subscriptionSchema = new mongoose.Schema(
     },
     channelId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Channel",
     },
     notificationLevel: {
       type: String,

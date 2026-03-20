@@ -43,8 +43,8 @@ const channelSchema = new mongoose.Schema(
       default: 0,
     },
     memberships: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Membership",
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true },
