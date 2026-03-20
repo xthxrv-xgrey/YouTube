@@ -1,7 +1,7 @@
 import { User } from "../models/user.model.js";
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.util.js";
+import { ApiResponse } from "../utils/ApiResponse.util.js";
+import { asyncHandler } from "../utils/asyncHandler.util.js";
 
 const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password, fullName, country } = req.body;
@@ -69,4 +69,11 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, createdUser, "User registered successfully"));
 });
 
-export { registerUser };
+const getUsers = asyncHandler(async (req, res) => {
+  const users = await User.find();
+  return res
+    .status(200)
+    .json(new ApiResponse(200, users, "Users fetched successfully"));
+});
+
+export { registerUser, getUsers };
