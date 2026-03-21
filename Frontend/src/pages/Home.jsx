@@ -5,8 +5,8 @@ const Home = () => {
   return (
     <div>
       <h1>Home</h1>
-      <Link to="/register">Register</Link>
-      {/* <a href="/login">Login</a> */}
+      <Link to="/auth/register">Register</Link>
+      <Link to="/auth/login">Login</Link>
     </div>
   );
 };

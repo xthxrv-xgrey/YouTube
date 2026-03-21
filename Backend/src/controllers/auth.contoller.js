@@ -2,11 +2,11 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.util.js";
 import { ApiResponse } from "../utils/ApiResponse.util.js";
 import { asyncHandler } from "../utils/asyncHandler.util.js";
+import jwt from "jsonwebtoken";
 
 const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password, fullName, country } = req.body;
 
-  // 🔍 Field-wise validation
   if (!username) {
     throw new ApiError(400, "Username is required");
   }
@@ -23,7 +23,6 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Full name is required");
   }
 
-  // 🔍 Optional validations
   if (username.length < 3) {
     throw new ApiError(400, "Username must be at least 3 characters long");
   }
@@ -37,7 +36,6 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid email format");
   }
 
-  // 🔍 Check existing user
   const existingUser = await User.findOne({
     $or: [{ username }, { email }],
   });
@@ -51,7 +49,6 @@ const registerUser = asyncHandler(async (req, res) => {
     }
   }
 
-  // 👤 Create user (password hashed in schema)
   const user = await User.create({
     username: username.toLowerCase(),
     email: email.toLowerCase(),
@@ -60,7 +57,6 @@ const registerUser = asyncHandler(async (req, res) => {
     country,
   });
 
-  // ✅ Convert to object & remove password (no extra DB call)
   const createdUser = user.toObject();
   delete createdUser.password;
 
@@ -69,11 +65,50 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, createdUser, "User registered successfully"));
 });
 
-const getUsers = asyncHandler(async (req, res) => {
-  const users = await User.find();
+const loginUser = asyncHandler(async (req, res) => {
+  const { identifier, password } = req.body;
+
+  if (!identifier) {
+    throw new ApiError(400, "Username or email is required");
+  }
+
+  if (!password) {
+    throw new ApiError(400, "Password is required");
+  }
+
+  const user = await User.findOne({
+    $or: [{ username: identifier }, { email: identifier }],
+  });
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const isPasswordValid = await user.comparePassword(password);
+
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Invalid password");
+  }
+
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
   return res
     .status(200)
-    .json(new ApiResponse(200, users, "Users fetched successfully"));
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        { user, accessToken, refreshToken },
+        "User logged in successfully",
+      ),
+    );
 });
 
-export { registerUser, getUsers };
+export { registerUser, loginUser };

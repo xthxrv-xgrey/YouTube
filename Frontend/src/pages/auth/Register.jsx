@@ -12,7 +12,7 @@ const Register = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:4000/api/v1/users/register",
+        "http://localhost:4000/api/v1/auth/register",
         {
           username: e.target.username.value,
           fullName: e.target.fullName.value,
@@ -123,7 +123,7 @@ const Register = () => {
           <p>
             Have an account?{" "}
             <Link
-              to="/login"
+              to="/auth/login"
               className="font-bold text-blue-600 hover:underline"
             >
               Log in

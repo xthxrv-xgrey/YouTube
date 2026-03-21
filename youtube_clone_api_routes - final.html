@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube Clone — API Routes</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --bg2: #1a1a1a;
+    --bg3: #222222;
+    --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(255,255,255,0.16);
+    --text: #e8e8e8;
+    --text-muted: #888;
+    --text-dim: #555;
+    --accent: #ff0000;
+    --accent-soft: rgba(255,0,0,0.12);
+    --GET: #22c55e; --GET-bg: rgba(34,197,94,0.1);
+    --POST: #3b82f6; --POST-bg: rgba(59,130,246,0.1);
+    --PUT: #f59e0b; --PUT-bg: rgba(245,158,11,0.1);
+    --PATCH: #a855f7; --PATCH-bg: rgba(168,85,247,0.1);
+    --DELETE: #ef4444; --DELETE-bg: rgba(239,68,68,0.1);
+    --radius: 10px;
+    --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --sans: 'DM Sans', 'Outfit', system-ui, sans-serif;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 2.5rem 1.5rem;
+  }
+
+  .page { max-width: 900px; margin: 0 auto; }
+
+  /* Header */
+  .header { margin-bottom: 2.5rem; }
+  .header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 0.5rem; }
+  .logo-icon { width: 32px; height: 22px; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+  .logo-icon::after { content: ''; width: 0; height: 0; border-style: solid; border-width: 6px 0 6px 11px; border-color: transparent transparent transparent #fff; margin-left: 2px; }
+  .title { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.03em; color: #fff; }
+  .subtitle { font-size: 0.875rem; color: var(--text-muted); margin-top: 2px; }
+  .stats { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.25rem; }
+  .stat { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 0.8rem; color: var(--text-muted); }
+  .stat strong { color: #fff; font-weight: 600; }
+
+  /* Toolbar */
+  .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .btn { background: var(--bg2); border: 1px solid var(--border); border-radius: 7px; color: var(--text-muted); font-size: 0.8rem; font-family: var(--sans); padding: 6px 12px; cursor: pointer; transition: all 0.15s; }
+  .btn:hover { border-color: var(--border-hover); color: var(--text); }
+  .btn.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .spacer { flex: 1; }
+  .search-wrap { position: relative; }
+  .search-wrap input { background: var(--bg2); border: 1px solid var(--border); border-radius: 7px; color: var(--text); font-family: var(--sans); font-size: 0.8rem; padding: 6px 12px 6px 30px; width: 200px; outline: none; transition: border-color 0.15s; }
+  .search-wrap input:focus { border-color: var(--border-hover); }
+  .search-wrap input::placeholder { color: var(--text-dim); }
+  .search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 13px; pointer-events: none; }
+
+  /* Phase */
+  .phase { margin-bottom: 2rem; }
+  .phase-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.75rem; padding-left: 2px; display: flex; align-items: center; gap: 8px; }
+  .phase-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* Controller */
+  .controller { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; transition: border-color 0.15s; }
+  .controller:hover { border-color: var(--border-hover); }
+  .ctrl-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; user-select: none; }
+  .ctrl-name { font-size: 0.875rem; font-weight: 500; color: #fff; }
+  .ctrl-prefix { font-family: var(--mono); font-size: 0.75rem; color: var(--text-dim); }
+  .ctrl-badge { font-size: 0.7rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px; color: var(--text-muted); margin-left: auto; }
+  .chevron { color: var(--text-dim); font-size: 11px; transition: transform 0.2s; margin-left: 6px; }
+  .chevron.open { transform: rotate(180deg); }
+
+  /* Routes */
+  .routes { display: none; border-top: 1px solid var(--border); }
+  .routes.open { display: block; }
+  .route { display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  .route:last-child { border-bottom: none; }
+  .route:hover { background: rgba(255,255,255,0.02); }
+  .method { font-family: var(--mono); font-size: 0.7rem; font-weight: 500; min-width: 52px; text-align: center; padding: 3px 0; border-radius: 5px; letter-spacing: 0.03em; }
+  .GET    { color: var(--GET);    background: var(--GET-bg); }
+  .POST   { color: var(--POST);   background: var(--POST-bg); }
+  .PUT    { color: var(--PUT);    background: var(--PUT-bg); }
+  .PATCH  { color: var(--PATCH);  background: var(--PATCH-bg); }
+  .DELETE { color: var(--DELETE); background: var(--DELETE-bg); }
+  .route-path { font-family: var(--mono); font-size: 0.8rem; color: #ccc; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .route-path .base { color: var(--text-dim); }
+  .route-desc { font-size: 0.78rem; color: var(--text-dim); min-width: 180px; text-align: right; white-space: nowrap; }
+
+  /* Filter highlight */
+  .route.hidden { display: none; }
+  .controller.all-hidden { display: none; }
+  .phase.all-hidden .phase-label { display: none; }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 3rem; color: var(--text-dim); font-size: 0.875rem; display: none; }
+  .empty.show { display: block; }
+
+  @media (max-width: 600px) {
+    .route-desc { display: none; }
+    .search-wrap input { width: 140px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="logo">
+          <div class="logo-icon"></div>
+          <span class="title">YouTube Clone</span>
+        </div>
+        <div class="subtitle">API Route Reference — MERN Stack</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><strong>53</strong> routes</div>
+      <div class="stat"><strong>13</strong> controllers</div>
+      <div class="stat"><strong>4</strong> build phases</div>
+      <div class="stat"><strong>MongoDB</strong> backend</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn active" onclick="filterMethod('ALL', this)">All</button>
+    <button class="btn" onclick="filterMethod('GET', this)">GET</button>
+    <button class="btn" onclick="filterMethod('POST', this)">POST</button>
+    <button class="btn" onclick="filterMethod('PATCH', this)">PATCH</button>
+    <button class="btn" onclick="filterMethod('DELETE', this)">DELETE</button>
+    <div class="spacer"></div>
+    <button class="btn" onclick="toggleAll()" id="expand-btn">Expand all</button>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" placeholder="Search routes..." oninput="searchRoutes(this.value)" />
+    </div>
+  </div>
+
+  <div id="app"></div>
+  <div class="empty" id="empty">No routes match your filter.</div>
+</div>
+
+<script>
+const data = [
+  {
+    phase: "Phase 1 — Auth & Core",
+    controllers: [
+      { name: "Auth Controller", prefix: "/api/auth", routes: [
+        { method: "POST",   path: "/register",        desc: "Register user + create channel" },
+        { method: "POST",   path: "/login",           desc: "Login, return JWT" },
+        { method: "POST",   path: "/logout",          desc: "Invalidate token" },
+        { method: "POST",   path: "/refresh-token",   desc: "Refresh access token" },
+        { method: "POST",   path: "/forgot-password", desc: "Send reset email" },
+        { method: "POST",   path: "/reset-password",  desc: "Reset with token" },
+      ]},
+      { name: "User Controller", prefix: "/api/users", routes: [
+        { method: "GET",    path: "/me",              desc: "Get current user" },
+        { method: "PATCH",  path: "/me",              desc: "Update profile" },
+        { method: "PATCH",  path: "/me/avatar",       desc: "Upload avatar" },
+        { method: "PATCH",  path: "/me/banner",       desc: "Upload banner" },
+        { method: "PATCH",  path: "/me/password",     desc: "Change password" },
+        { method: "DELETE", path: "/me",              desc: "Delete account" },
+      ]},
+      { name: "Channel Controller", prefix: "/api/channels", routes: [
+        { method: "GET",    path: "/:handle",         desc: "Get channel by @handle" },
+        { method: "PATCH",  path: "/:id",             desc: "Update channel info" },
+        { method: "GET",    path: "/:id/videos",      desc: "List channel videos" },
+        { method: "GET",    path: "/:id/playlists",   desc: "List channel playlists" },
+        { method: "GET",    path: "/:id/stats",       desc: "Subscriber/view counts" },
+      ]},
+    ]
+  },
+  {
+    phase: "Phase 2 — Content",
+    controllers: [
+      { name: "Video Controller", prefix: "/api/videos", routes: [
+        { method: "POST",   path: "/",                desc: "Upload video" },
+        { method: "GET",    path: "/",                desc: "List / feed videos" },
+        { method: "GET",    path: "/:id",             desc: "Get video by ID" },
+        { method: "PATCH",  path: "/:id",             desc: "Update title/desc/tags" },
+        { method: "DELETE", path: "/:id",             desc: "Delete video" },
+        { method: "PATCH",  path: "/:id/thumbnail",   desc: "Update thumbnail" },
+        { method: "GET",    path: "/:id/status",      desc: "Check processing status" },
+        { method: "POST",   path: "/:id/view",        desc: "Increment view count" },
+        { method: "PATCH",  path: "/:id/privacy",     desc: "Set public/private/unlisted" },
+      ]},
+      { name: "Comment Controller", prefix: "/api/comments", routes: [
+        { method: "POST",   path: "/",                       desc: "Add comment to video" },
+        { method: "GET",    path: "/video/:videoId",         desc: "Get top-level comments" },
+        { method: "GET",    path: "/:id/replies",            desc: "Get nested replies" },
+        { method: "PATCH",  path: "/:id",                   desc: "Edit comment" },
+        { method: "DELETE", path: "/:id",                   desc: "Soft-delete comment" },
+        { method: "PATCH",  path: "/:id/pin",               desc: "Pin / unpin comment" },
+      ]},
+      { name: "Watch History Controller", prefix: "/api/history", routes: [
+        { method: "POST",   path: "/",                desc: "Upsert watch progress" },
+        { method: "GET",    path: "/",                desc: "Get user watch history" },
+        { method: "GET",    path: "/:videoId",        desc: "Get progress for video" },
+        { method: "DELETE", path: "/",                desc: "Clear all history" },
+        { method: "DELETE", path: "/:videoId",        desc: "Remove one entry" },
+      ]},
+    ]
+  },
+  {
+    phase: "Phase 3 — Social",
+    controllers: [
+      { name: "Subscription Controller", prefix: "/api/subscriptions", routes: [
+        { method: "POST",   path: "/:channelId",                   desc: "Subscribe to channel" },
+        { method: "DELETE", path: "/:channelId",                   desc: "Unsubscribe" },
+        { method: "GET",    path: "/",                             desc: "List my subscriptions" },
+        { method: "GET",    path: "/:channelId",                   desc: "Check subscription status" },
+        { method: "PATCH",  path: "/:channelId/notifications",     desc: "Set notification level" },
+      ]},
+      { name: "Like Controller", prefix: "/api/likes", routes: [
+        { method: "POST",   path: "/video/:id",       desc: "Like / dislike video" },
+        { method: "POST",   path: "/comment/:id",     desc: "Like / dislike comment" },
+        { method: "DELETE", path: "/video/:id",       desc: "Remove video like" },
+        { method: "DELETE", path: "/comment/:id",     desc: "Remove comment like" },
+        { method: "GET",    path: "/video/:id",       desc: "Get like counts for video" },
+        { method: "GET",    path: "/me/videos",       desc: "My liked videos" },
+      ]},
+      { name: "Playlist Controller", prefix: "/api/playlists", routes: [
+        { method: "POST",   path: "/",                         desc: "Create playlist" },
+        { method: "GET",    path: "/:id",                      desc: "Get playlist + videos" },
+        { method: "PATCH",  path: "/:id",                      desc: "Update title/desc/privacy" },
+        { method: "DELETE", path: "/:id",                      desc: "Delete playlist" },
+        { method: "POST",   path: "/:id/videos",               desc: "Add video to playlist" },
+        { method: "DELETE", path: "/:id/videos/:videoId",      desc: "Remove video" },
+        { method: "GET",    path: "/me",                       desc: "My playlists" },
+      ]},
+      { name: "Notification Controller", prefix: "/api/notifications", routes: [
+        { method: "GET",    path: "/",              desc: "Get my notifications" },
+        { method: "GET",    path: "/unread",        desc: "Unread count (badge)" },
+        { method: "PATCH",  path: "/:id/read",      desc: "Mark one as read" },
+        { method: "PATCH",  path: "/read-all",      desc: "Mark all as read" },
+        { method: "DELETE", path: "/:id",           desc: "Delete notification" },
+      ]},
+      { name: "Report Controller", prefix: "/api/reports", routes: [
+        { method: "POST",  path: "/",    desc: "Submit report" },
+        { method: "GET",   path: "/",    desc: "List reports (admin)" },
+        { method: "PATCH", path: "/:id", desc: "Review / resolve report (admin)" },
+      ]},
+    ]
+  },
+  {
+    phase: "Phase 4 — Advanced",
+    controllers: [
+      { name: "Membership Controller", prefix: "/api/memberships", routes: [
+        { method: "POST",   path: "/channel/:channelId", desc: "Join / upgrade tier" },
+        { method: "GET",    path: "/me",                 desc: "My memberships" },
+        { method: "DELETE", path: "/:id",                desc: "Cancel membership" },
+        { method: "POST",   path: "/webhook",            desc: "Payment webhook" },
+      ]},
+      { name: "Live Stream Controller", prefix: "/api/livestreams", routes: [
+        { method: "POST",   path: "/",           desc: "Create scheduled stream" },
+        { method: "GET",    path: "/",           desc: "List live / upcoming" },
+        { method: "GET",    path: "/:id",        desc: "Get stream details" },
+        { method: "PATCH",  path: "/:id",        desc: "Update title/thumbnail" },
+        { method: "POST",   path: "/:id/start",  desc: "Go live" },
+        { method: "POST",   path: "/:id/end",    desc: "End stream" },
+        { method: "GET",    path: "/:id/key",    desc: "Get stream key (private)" },
+      ]},
+      { name: "Search Controller", prefix: "/api/search", routes: [
+        { method: "GET", path: "/videos",   desc: "Search videos (text index)" },
+        { method: "GET", path: "/channels", desc: "Search channels" },
+        { method: "GET", path: "/suggest",  desc: "Autocomplete suggestions" },
+      ]},
+    ]
+  }
+];
+
+let allOpen = false;
+let activeMethod = 'ALL';
+
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  data.forEach((phase, pi) => {
+    const phaseEl = document.createElement('div');
+    phaseEl.className = 'phase';
+    phaseEl.dataset.phase = pi;
+    phaseEl.innerHTML = `<div class="phase-label">${phase.phase}</div>`;
+    phase.controllers.forEach((ctrl, ci) => {
+      const id = `${pi}-${ci}`;
+      const ctrlEl = document.createElement('div');
+      ctrlEl.className = 'controller';
+      ctrlEl.dataset.ctrl = id;
+      ctrlEl.innerHTML = `
+        <div class="ctrl-header" onclick="toggle('${id}')">
+          <span class="ctrl-name">${ctrl.name}</span>
+          <span class="ctrl-prefix">${ctrl.prefix}</span>
+          <span class="ctrl-badge">${ctrl.routes.length} routes</span>
+          <span class="chevron" id="chev-${id}">▼</span>
+        </div>
+        <div class="routes" id="routes-${id}">
+          ${ctrl.routes.map((r, ri) => `
+            <div class="route" data-method="${r.method}" data-path="${ctrl.prefix}${r.path}" data-desc="${r.desc}" data-ri="${pi}-${ci}-${ri}">
+              <span class="method ${r.method}">${r.method}</span>
+              <span class="route-path"><span class="base">${ctrl.prefix}</span>${r.path}</span>
+              <span class="route-desc">${r.desc}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      phaseEl.appendChild(ctrlEl);
+    });
+    app.appendChild(phaseEl);
+  });
+}
+
+function toggle(id) {
+  const routes = document.getElementById('routes-' + id);
+  const chev = document.getElementById('chev-' + id);
+  const isOpen = routes.classList.toggle('open');
+  chev.classList.toggle('open', isOpen);
+}
+
+function toggleAll() {
+  allOpen = !allOpen;
+  document.querySelectorAll('.routes').forEach(r => r.classList.toggle('open', allOpen));
+  document.querySelectorAll('.chevron').forEach(c => c.classList.toggle('open', allOpen));
+  document.getElementById('expand-btn').textContent = allOpen ? 'Collapse all' : 'Expand all';
+}
+
+function filterMethod(method, btn) {
+  activeMethod = method;
+  document.querySelectorAll('.toolbar .btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function searchRoutes(q) {
+  applyFilters(q.toLowerCase());
+}
+
+function applyFilters(q = '') {
+  let anyVisible = false;
+  document.querySelectorAll('.controller').forEach(ctrl => {
+    let ctrlVisible = false;
+    ctrl.querySelectorAll('.route').forEach(r => {
+      const methodMatch = activeMethod === 'ALL' || r.dataset.method === activeMethod;
+      const pathMatch = !q || r.dataset.path.includes(q) || r.dataset.desc.toLowerCase().includes(q) || r.dataset.method.toLowerCase().includes(q);
+      const show = methodMatch && pathMatch;
+      r.classList.toggle('hidden', !show);
+      if (show) { ctrlVisible = true; anyVisible = true; }
+    });
+    ctrl.classList.toggle('all-hidden', !ctrlVisible);
+    if (ctrlVisible && q) {
+      document.getElementById('routes-' + ctrl.dataset.ctrl)?.classList.add('open');
+      document.getElementById('chev-' + ctrl.dataset.ctrl)?.classList.add('open');
+    }
+  });
+  document.getElementById('empty').classList.toggle('show', !anyVisible);
+}
+
+render();
+</script>
+</body>
+</html>
