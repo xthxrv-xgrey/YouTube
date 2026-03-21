@@ -50,24 +50,24 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-blue-200 px-4">
-      <div className="max-w-[400px] w-full bg-[#f1f7fe] overflow-hidden rounded-2xl text-black">
+    <div className="min-h-screen flex justify-center items-center bg-blue-200 dark:bg-[#181818] px-4">
+      <div className="max-w-[400px] w-full bg-[#f1f7fe] dark:bg-[#222222] overflow-hidden rounded-2xl text-black dark:text-white">
         <form
           onSubmit={handleRegister}
           className="relative flex flex-col px-6 pt-8 pb-6 gap-3 text-center"
         >
           <span className="font-bold text-[1.6rem]">Sign up</span>
-          <span className="text-base text-gray-500">
+          <span className="text-base text-gray-500 dark:text-gray-200">
             Create a free account with your email.
           </span>
 
-          <div className="overflow-hidden rounded-lg bg-white my-4 w-full">
+          <div className="overflow-hidden rounded-lg bg-white dark:bg-[#181818] my-4 w-full">
             <input
               type="text"
               name="fullName"
               placeholder="Full Name"
               required
-              className="w-full h-10 px-4 text-sm border-b border-gray-200 outline-none bg-transparent"
+              className="w-full h-10 px-4 bg-white dark:bg-[#181818] text-sm border-b border-gray-200 dark:border-gray-800 outline-nonw bg-transparent"
             />
 
             <input
@@ -75,7 +75,7 @@ const Register = () => {
               name="username"
               placeholder="Username"
               required
-              className="w-full h-10 px-4 text-sm border-b border-gray-200 outline-none bg-transparent"
+              className="w-full h-10 px-4 bg-white dark:bg-[#181818] text-sm border-b border-gray-200 dark:border-gray-800 outline-none bg-transparent"
             />
 
             <input
@@ -83,7 +83,7 @@ const Register = () => {
               name="email"
               placeholder="Email"
               required
-              className="w-full h-10 px-4 text-sm border-b border-gray-200 outline-none bg-transparent"
+              className="w-full h-10 px-4 bg-white dark:bg-[#181818] text-sm border-b border-gray-200 dark:border-gray-800 outline-none bg-transparent"
             />
 
             <input
@@ -91,7 +91,7 @@ const Register = () => {
               name="password"
               placeholder="Password"
               required
-              className="w-full h-10 px-4 text-sm outline-none bg-transparent"
+              className="w-full h-10 px-4 bg-white dark:bg-[#181818] text-sm border-b border-gray-200 dark:border-gray-800 outline-none bg-transparent"
             />
           </div>
 
@@ -119,7 +119,7 @@ const Register = () => {
           </button>
         </form>
 
-        <div className="p-4 text-[0.85rem] bg-[#e0ecfb] text-center">
+        <div className="p-4 text-[0.85rem] bg-[#e0ecfb] dark:bg-[#222222] text-center">
           <p>
             Have an account?{" "}
             <Link
