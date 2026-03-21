@@ -10,8 +10,8 @@ const settingsSlice = createSlice({
   name: "settings",
   initialState,
   reducers: {
-    toggleTheme: (state) => {
-      state.theme = state.theme === "light" ? "dark" : "light";
+    setTheme: (state, action) => {
+      state.theme = action.payload;
     },
     setLanguage: (state, action) => {
       state.language = action.payload;
