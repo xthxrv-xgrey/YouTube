@@ -40,7 +40,7 @@ const SearchBar = () => {
       {/* Search Button */}
       <button
         type="submit"
-        className="flex items-center justify-center w-16 h-10 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r-full bg-gray-100 dark:bg-[#222] hover:bg-gray-200 dark:hover:bg-[#333]"
+        className="flex items-center justify-center w-16 h-10 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r-full bg-gray-100 dark:bg-[#222] hover:bg-gray-200 dark:hover:bg-[#333] hover:cursor-pointer"
       >
         <Search className="text-gray-700 dark:text-gray-300" />
       </button>
@@ -48,7 +48,7 @@ const SearchBar = () => {
       {/* Mic */}
       <button
         type="button"
-        className="ml-3 flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-[#222] hover:bg-gray-200 dark:hover:bg-[#333]"
+        className="ml-3 flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-[#222] hover:bg-gray-200 dark:hover:bg-[#333] hover:cursor-pointer"
       >
         <Mic className="text-gray-700 dark:text-gray-300" />
       </button>
