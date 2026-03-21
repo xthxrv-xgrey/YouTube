@@ -1,7 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 const Register = () => {
+  const navigate = useNavigate();
+  const [error, setError] = useState("");
+
   const handleRegister = async (e) => {
     e.preventDefault();
 
@@ -17,73 +22,112 @@ const Register = () => {
       );
 
       console.log("Success:", response.data);
-    } catch (error) {
-      console.error("Error:", error.response?.data || error.message);
-    }
 
-    e.target.reset();
+      // ✅ Show success toast
+      toast.success("Signup successful!");
+
+      // 🔐 FUTURE: If backend sends token
+      /*
+      localStorage.setItem("token", response.data.token);
+      navigate("/");
+      */
+
+      // 👉 Current flow (no token)
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
+
+      e.target.reset();
+      setError("");
+    } catch (error) {
+      const message = error.response?.data?.message || "Something went wrong";
+
+      setError(message);
+
+      // ❌ Error toast
+      toast.error(message);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
-      <div className="max-w-sm w-full bg-blue-50 rounded-2xl overflow-hidden text-black shadow-lg">
+    <div className="min-h-screen flex justify-center items-center bg-blue-200 px-4">
+      <div className="max-w-[400px] w-full bg-[#f1f7fe] overflow-hidden rounded-2xl text-black">
         <form
           onSubmit={handleRegister}
-          className="flex flex-col gap-4 text-center px-6 pt-8 pb-6"
+          className="relative flex flex-col px-6 pt-8 pb-6 gap-3 text-center"
         >
-          {/* Title */}
-          <span className="font-bold text-2xl">Sign up</span>
-          <span className="text-gray-500 text-sm">
+          <span className="font-bold text-[1.6rem]">Sign up</span>
+          <span className="text-base text-gray-500">
             Create a free account with your email.
           </span>
 
-          {/* Inputs */}
-          <div className="bg-white rounded-lg overflow-hidden mt-4 mb-2 w-full">
+          <div className="overflow-hidden rounded-lg bg-white my-4 w-full">
             <input
               type="text"
               name="fullName"
               placeholder="Full Name"
-              className="w-full h-10 px-4 text-sm outline-none border-b border-gray-200"
+              required
+              className="w-full h-10 px-4 text-sm border-b border-gray-200 outline-none bg-transparent"
             />
+
             <input
               type="text"
               name="username"
               placeholder="Username"
-              className="w-full h-10 px-4 text-sm outline-none border-b border-gray-200"
+              required
+              className="w-full h-10 px-4 text-sm border-b border-gray-200 outline-none bg-transparent"
             />
+
             <input
               type="email"
               name="email"
               placeholder="Email"
-              className="w-full h-10 px-4 text-sm outline-none border-b border-gray-200"
+              required
+              className="w-full h-10 px-4 text-sm border-b border-gray-200 outline-none bg-transparent"
             />
+
             <input
               type="password"
               name="password"
               placeholder="Password"
-              className="w-full h-10 px-4 text-sm outline-none"
+              required
+              className="w-full h-10 px-4 text-sm outline-none bg-transparent"
             />
           </div>
 
-          {/* Button */}
+          {/* Optional inline error */}
+          {error && <p className="text-red-500 text-xs text-right">{error}</p>}
+
+          <div className="flex items-center gap-4">
+            <input
+              type="checkbox"
+              name="terms"
+              id="terms"
+              required
+              className="w-4 h-4"
+            />
+            <label htmlFor="terms" className="text-sm text-gray-500">
+              I agree to the terms and conditions
+            </label>
+          </div>
+
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-700 transition text-white font-semibold py-2 px-4 rounded-full"
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-4 py-2 text-base font-semibold transition-colors duration-300"
           >
             Sign up
           </button>
         </form>
 
-        {/* Bottom Section */}
-        <div className="px-4 py-3 text-sm bg-blue-100 border-t border-black/5 text-center">
+        <div className="p-4 text-[0.85rem] bg-[#e0ecfb] text-center">
           <p>
             Have an account?{" "}
-            <a
-              href="#"
-              className="font-bold text-blue-600 hover:text-blue-700 hover:underline"
+            <Link
+              to="/login"
+              className="font-bold text-blue-600 hover:underline"
             >
               Log in
-            </a>
+            </Link>
           </p>
         </div>
       </div>
