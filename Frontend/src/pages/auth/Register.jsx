@@ -11,15 +11,12 @@ const Register = () => {
     e.preventDefault();
 
     try {
-      const response = await axios.post(
-        "http://localhost:4000/api/v1/auth/register",
-        {
-          username: e.target.username.value,
-          fullName: e.target.fullName.value,
-          email: e.target.email.value,
-          password: e.target.password.value,
-        },
-      );
+      const response = await axios.post("/api/v1/auth/register", {
+        username: e.target.username.value,
+        fullName: e.target.fullName.value,
+        email: e.target.email.value,
+        password: e.target.password.value,
+      });
 
       console.log("Success:", response.data);
 

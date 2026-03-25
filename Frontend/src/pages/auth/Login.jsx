@@ -11,13 +11,10 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      const response = await axios.post(
-        "http://localhost:4000/api/v1/auth/login",
-        {
-          identifier: e.target.usernameOrEmail.value,
-          password: e.target.password.value,
-        },
-      );
+      const response = await axios.post("api/v1/auth/login", {
+        identifier: e.target.usernameOrEmail.value,
+        password: e.target.password.value,
+      });
 
       console.log("Success:", response.data);
       toast.success("Login successful!");

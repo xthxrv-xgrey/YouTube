@@ -4,6 +4,11 @@ import jwt from "jsonwebtoken";
 
 const userSchema = new mongoose.Schema(
   {
+    fullName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     username: {
       type: String,
       required: true,
@@ -22,11 +27,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    fullName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
     avatar: {
       type: String,
       default:
@@ -39,6 +39,7 @@ const userSchema = new mongoose.Schema(
     },
     channelDescription: {
       type: String,
+      default: "",
       trim: true,
     },
     subscriberCount: {
@@ -48,10 +49,6 @@ const userSchema = new mongoose.Schema(
     videoCount: {
       type: Number,
       default: 0,
-    },
-    isVerified: {
-      type: Boolean,
-      default: false,
     },
     country: {
       type: String,
