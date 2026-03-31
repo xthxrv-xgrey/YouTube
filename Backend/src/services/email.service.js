@@ -7,7 +7,7 @@ export function generateOtp() {
   return crypto.randomInt(100000, 999999).toString();
 }
 
-export function getOtpHtml(otp) {
+export function getOtpHtml(otp, message, expiryTime) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,7 +27,7 @@ export function getOtpHtml(otp) {
                     </tr>
                     <tr>
                         <td align="center" style="padding-bottom:12px;">
-                            <p style="margin:0; color:#555555; font-size:14px;">Use the code below to verify your email address. It expires in <strong>2 minutes</strong>.</p>
+                            <p style="margin:0; color:#555555; font-size:14px;">${message} <strong> It expires in ${expiryTime}</strong>.</p>
                         </td>
                     </tr>
                     <tr>
