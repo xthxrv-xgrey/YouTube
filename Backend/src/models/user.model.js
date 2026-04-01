@@ -52,11 +52,13 @@ const userSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
-      default: "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+      default:
+        "https://res.cloudinary.com/dfndzxbvm/image/upload/v1774013509/user-pfp-default_vm1pzx.jpg",
     },
     channelBanner: {
       type: String,
-      default: "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+      default:
+        "https://res.cloudinary.com/dfndzxbvm/image/upload/v1774013489/channel-banner-default_lacjyo.png",
     },
     channelDescription: {
       type: String,
