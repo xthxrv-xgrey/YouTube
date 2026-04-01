@@ -17,12 +17,14 @@ const validatePassword = (password) => {
       "Password must be between 6 and 30 characters long",
     );
   }
+  // strong pass regex
   // if (!/(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])/.test(password)) {
   //   throw new ApiError(
   //     400,
   //     "Password must include uppercase, lowercase, number, and special character",
   //   );
   // }
+  // weak pass regex
   if (!/(?=.*[A-Za-z])(?=.*\d)/.test(password)) {
     throw new ApiError(
       400,
@@ -82,11 +84,13 @@ const updateRefreshToken = async (refreshToken, session, res) => {
 // @route POST /api/v1/auth/register
 // @access Public
 export const registerUser = asyncHandler(async (req, res) => {
-  const { username, email, password } = req.body;
+  const { firstName, lastName, username, email, password, country } = req.body;
 
-  if (!username || !email || !password) {
+  if (!firstName || !username || !email || !password || !country) {
     throw new ApiError(400, "All fields are required");
   }
+
+  const fullName = { firstName, lastName };
 
   const usernameNormalized = username.toLowerCase();
   const emailNormalized = email.toLowerCase();
@@ -131,9 +135,11 @@ export const registerUser = asyncHandler(async (req, res) => {
   const hashedOtp = hashToken(otp);
 
   await UnverifiedUser.create({
+    fullName,
     username: usernameNormalized,
     email: emailNormalized,
     password,
+    country,
     otp: hashedOtp,
   });
 
@@ -162,9 +168,11 @@ export const verifyUser = asyncHandler(async (req, res) => {
   }
 
   const user = await User.create({
+    fullName: unverifiedUser.fullName,
     username: unverifiedUser.username,
     email: unverifiedUser.email,
     password: unverifiedUser.password,
+    country: unverifiedUser.country,
   });
 
   await UnverifiedUser.deleteOne({ email: emailNormalized });

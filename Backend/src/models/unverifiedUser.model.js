@@ -2,6 +2,21 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
 const unverifiedUserSchema = new mongoose.Schema({
+  fullName: {
+    firstName: {
+      type: String,
+      required: [true, "First name is required"],
+      trim: true,
+      minlength: [2, "First name must be at least 2 characters long"],
+      maxlength: [50, "First name must be at most 50 characters long"],
+    },
+    lastName: {
+      type: String,
+      trim: true,
+      maxlength: [50, "Last name must be at most 50 characters long"],
+    },
+  },
+
   username: {
     type: String,
     required: [true, "Username is required"],
@@ -28,6 +43,12 @@ const unverifiedUserSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, "Password is required"],
+  },
+
+  country: {
+    type: String,
+    required: [true, "Country is required"],
+    trim: true,
   },
 
   otp: {

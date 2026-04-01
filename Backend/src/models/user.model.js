@@ -5,6 +5,20 @@ import { config } from "../config/config.js";
 
 const userSchema = new mongoose.Schema(
   {
+    fullName: {
+      firstName: {
+        type: String,
+        required: [true, "First name is required"],
+        trim: true,
+        minlength: [2, "First name must be at least 2 characters long"],
+        maxlength: [50, "First name must be at most 50 characters long"],
+      },
+      lastName: {
+        type: String,
+        trim: true,
+        maxlength: [50, "Last name must be at most 50 characters long"],
+      },
+    },
     username: {
       type: String,
       required: [true, "Username is required"],
@@ -30,6 +44,36 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Password is required"],
       select: false,
+    },
+    country: {
+      type: String,
+      required: [true, "Country is required"],
+      trim: true,
+    },
+    avatar: {
+      type: String,
+      default: "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+    },
+    channelBanner: {
+      type: String,
+      default: "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+    },
+    channelDescription: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: [
+        1000,
+        "Channel description must be at most 1000 characters long",
+      ],
+    },
+    subscribersCount: {
+      type: Number,
+      default: 0,
+    },
+    videosCount: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true },
