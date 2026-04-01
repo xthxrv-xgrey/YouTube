@@ -1,49 +1,22 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import toast, { Toaster } from "react-hot-toast";
+import logo from "../../assets/images/favicon_144x144.png";
+import OTPModal from "../../components/modals/OTPModal";
 
 const countries = [
-  { name: "Afghanistan", code: "AF" },
-  { name: "Albania", code: "AL" },
-  { name: "Algeria", code: "DZ" },
-  { name: "Andorra", code: "AD" },
-  { name: "Angola", code: "AO" },
-  { name: "Argentina", code: "AR" },
-  { name: "Australia", code: "AU" },
-  { name: "Austria", code: "AT" },
-  { name: "Bangladesh", code: "BD" },
-  { name: "Belgium", code: "BE" },
-  { name: "Brazil", code: "BR" },
-  { name: "Canada", code: "CA" },
-  { name: "China", code: "CN" },
-  { name: "Denmark", code: "DK" },
-  { name: "Egypt", code: "EG" },
-  { name: "Finland", code: "FI" },
-  { name: "France", code: "FR" },
-  { name: "Germany", code: "DE" },
-  { name: "Greece", code: "GR" },
-  { name: "India", code: "IN" },
-  { name: "Indonesia", code: "ID" },
-  { name: "Italy", code: "IT" },
-  { name: "Japan", code: "JP" },
-  { name: "Mexico", code: "MX" },
-  { name: "Netherlands", code: "NL" },
-  { name: "New Zealand", code: "NZ" },
-  { name: "Norway", code: "NO" },
-  { name: "Pakistan", code: "PK" },
-  { name: "Portugal", code: "PT" },
-  { name: "Russia", code: "RU" },
-  { name: "Saudi Arabia", code: "SA" },
-  { name: "South Africa", code: "ZA" },
-  { name: "South Korea", code: "KR" },
-  { name: "Spain", code: "ES" },
-  { name: "Sweden", code: "SE" },
-  { name: "Switzerland", code: "CH" },
-  { name: "Turkey", code: "TR" },
-  { name: "United Arab Emirates", code: "AE" },
-  { name: "United Kingdom", code: "GB" },
-  { name: "United States", code: "US" },
-  { name: "Vietnam", code: "VN" },
+  "India",
+  "United States",
+  "United Kingdom",
+  "Canada",
+  "Australia",
+  "Germany",
+  "France",
+  "Japan",
+  "China",
+  "Brazil",
+  "Italy",
 ];
 
 const Register = () => {
@@ -56,11 +29,12 @@ const Register = () => {
     password: "",
     country: "",
   });
-
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [focused, setFocused] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -72,394 +46,668 @@ const Register = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     try {
-      const response = await axios.post("/api/v1/auth/register", formData);
-      if (response.status === 200) {
-        setSuccess(true);
-        setTimeout(() => {}, 2000);
-      }
+      const res = await axios.post("/api/v1/auth/register", formData);
+      if (res.status === 200) setShowOtpModal(true);
     } catch (err) {
-      const message =
-        err.response?.data?.message || "Registration failed. Please try again.";
-      setError(message);
+      const msg = err.response?.data?.message || "Registration failed.";
+      setError(msg);
+      toast.error(msg, { style: toastStyle });
     } finally {
       setLoading(false);
     }
   };
 
-  if (success) {
-    return (
-      <div className="h-[50vh] w-full flex items-center justify-center bg-[#0a0a0b] p-4 relative overflow-hidden">
-        <div className="glass w-full max-w-[420px] p-10 rounded-[32px] text-center flex flex-col gap-6 relative z-10 animate-in fade-in zoom-in duration-300">
-          <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center border border-green-500/20 mx-auto">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#22c55e"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-          </div>
-          <div className="flex flex-col gap-2">
-            <h2 className="text-2xl font-bold text-white">OTP Sent!</h2>
-            <p className="text-white/50 text-sm">
-              A verification code has been sent to{" "}
-              <span className="text-white font-medium">{formData.email}</span>.
-              Please check your inbox.
-            </p>
-          </div>
-          <button
-            onClick={() => setSuccess(false)}
-            className="text-white/30 hover:text-white text-sm transition-colors mt-2"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const handleVerifyOtp = async (otp) => {
+    setVerifying(true);
+    try {
+      await axios.post("/api/v1/auth/verify-user", {
+        email: formData.email,
+        otp,
+      });
+      setShowOtpModal(false);
+      toast.success("Account verified! Welcome 🎉", {
+        duration: 2000,
+        style: toastStyle,
+      });
+      setTimeout(() => navigate("/"), 900);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Invalid OTP", {
+        style: toastStyle,
+      });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      await axios.post("/api/v1/auth/resend-otp", { email: formData.email });
+      toast.success("OTP resent to your email", { style: toastStyle });
+    } catch {
+      toast.error("Failed to resend OTP", { style: toastStyle });
+    }
+  };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#0a0a0b] p-4 relative overflow-hidden">
-      <div className="absolute top-[-15%] left-[-10%] w-[50%] h-[50%] bg-red-600/15 rounded-full blur-[140px] pointer-events-none animate-pulse" />
-      <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] bg-blue-600/15 rounded-full blur-[140px] pointer-events-none animate-pulse delay-700" />
+    <div style={styles.page}>
+      {/* Ambient orbs */}
+      <div style={styles.orb1} />
+      <div style={styles.orb2} />
+      <div style={styles.orb3} />
 
-      <div className="glass w-full max-w-[420px] p-8 rounded-[32px] flex flex-col items-center gap-6 relative z-10 drop-shadow-2xl">
-        <header className="flex flex-col items-center gap-2 text-center mb-2">
-          <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shadow-lg p-2.5 hover:rotate-3 transition-transform cursor-pointer group">
-            <img
-              src="/src/assets/images/favicon_96x96.png"
-              alt="logo"
-              className="w-full h-full object-contain drop-shadow-xl group-hover:scale-110 transition-transform"
-            />
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-lg">
-              Start Your Journey
-            </h1>
-            <p className="text-white/40 text-xs tracking-wider uppercase font-semibold">
-              Join the creators
-            </p>
-          </div>
-        </header>
+      {/* Noise grain overlay */}
+      <div style={styles.grain} />
 
-        <div
-          className={`w-full overflow-hidden transition-all duration-300 ease-in-out ${error ? "max-h-20 opacity-100 mb-2" : "max-h-0 opacity-0"}`}
-        >
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs px-3.5 py-2.5 rounded-xl flex items-center gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span className="font-medium">{error}</span>
+      <div style={styles.card}>
+        {/* Header */}
+        <div style={styles.header}>
+          <div style={styles.logoWrap}>
+            <img src={logo} alt="Logo" style={styles.logo} />
+            <div style={styles.logoPulse} />
+          </div>
+          <div>
+            <h1 style={styles.title}>Create Account</h1>
+            <p style={styles.subtitle}>Start your journey today</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-white/30 px-1 uppercase tracking-widest">
-                First Name
-              </label>
-              <div className="relative group">
-                <input
-                  type="text"
-                  name="firstName"
-                  placeholder="John"
-                  required
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className="w-full bg-white/[0.03] border border-white/10 p-3 rounded-2xl text-sm text-white placeholder:text-white/10 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 transition-all focus:bg-white/[0.05]"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-white/30 px-1 uppercase tracking-widest">
-                Last Name
-              </label>
-              <input
-                type="text"
-                name="lastName"
-                placeholder="Doe"
-                value={formData.lastName}
-                onChange={handleChange}
-                className="w-full bg-white/[0.03] border border-white/10 p-3 rounded-2xl text-sm text-white placeholder:text-white/10 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 transition-all focus:bg-white/[0.05]"
-              />
-            </div>
+        {/* Divider */}
+        <div style={styles.divider} />
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <div style={styles.row}>
+            <Field
+              name="firstName"
+              placeholder="First name"
+              onChange={handleChange}
+              focused={focused}
+              setFocused={setFocused}
+            />
+            <Field
+              name="lastName"
+              placeholder="Last name"
+              onChange={handleChange}
+              focused={focused}
+              setFocused={setFocused}
+            />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-white/30 px-1 uppercase tracking-widest">
-              Username
-            </label>
-            <div className="relative group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-red-500 transition-colors">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-              </span>
-              <input
-                type="text"
-                name="username"
-                placeholder="johndoe"
-                required
-                value={formData.username}
-                onChange={handleChange}
-                className="w-full bg-white/[0.03] border border-white/10 p-3 pl-11 rounded-2xl text-sm text-white placeholder:text-white/10 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 transition-all focus:bg-white/[0.05]"
-              />
-            </div>
-          </div>
+          <Field
+            name="username"
+            placeholder="Username"
+            onChange={handleChange}
+            focused={focused}
+            setFocused={setFocused}
+            icon={<AtIcon />}
+          />
 
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-white/30 px-1 uppercase tracking-widest">
-              Email Address
-            </label>
-            <div className="relative group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-red-500 transition-colors">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                  <polyline points="22,6 12,13 2,6" />
-                </svg>
-              </span>
-              <input
-                type="email"
-                name="email"
-                placeholder="john@example.com"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full bg-white/[0.03] border border-white/10 p-3 pl-11 rounded-2xl text-sm text-white placeholder:text-white/10 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 transition-all focus:bg-white/[0.05]"
-              />
-            </div>
-          </div>
+          <Field
+            name="email"
+            type="email"
+            placeholder="Email address"
+            onChange={handleChange}
+            focused={focused}
+            setFocused={setFocused}
+            icon={<MailIcon />}
+          />
 
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-white/30 px-1 uppercase tracking-widest">
-              Password
-            </label>
-            <div className="relative group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-red-500 transition-colors">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-              </span>
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="••••••••"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full bg-white/[0.03] border border-white/10 p-3 pl-11 pr-11 rounded-2xl text-sm text-white placeholder:text-white/10 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 transition-all focus:bg-white/[0.05]"
-              />
+          <Field
+            name="password"
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            onChange={handleChange}
+            focused={focused}
+            setFocused={setFocused}
+            icon={<LockIcon />}
+            rightAction={
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/10 hover:text-white transition-colors"
+                style={styles.eyeBtn}
               >
-                {showPassword ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                )}
+                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
               </button>
-            </div>
+            }
+          />
+
+          {/* Country Select */}
+          <div
+            style={{
+              ...styles.fieldWrap,
+              ...(focused === "country" ? styles.fieldWrapFocused : {}),
+            }}
+          >
+            <GlobeIcon style={styles.fieldIcon} />
+            <select
+              name="country"
+              required
+              onChange={handleChange}
+              onFocus={() => setFocused("country")}
+              onBlur={() => setFocused("")}
+              style={styles.select}
+            >
+              <option value="" style={{ background: "#0d0d14" }}>
+                Select country
+              </option>
+              {countries.map((c, i) => (
+                <option key={i} value={c} style={{ background: "#0d0d14" }}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-white/30 px-1 uppercase tracking-widest">
-              Select Country
-            </label>
-            <div className="relative group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-red-500 transition-colors pointer-events-none">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="2" y1="12" x2="22" y2="12" />
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                </svg>
-              </span>
-              <select
-                name="country"
-                required
-                value={formData.country}
-                onChange={handleChange}
-                className="w-full bg-white/[0.03] border border-white/10 p-3 pl-11 rounded-2xl text-sm text-white appearance-none focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 transition-all focus:bg-white/[0.05] cursor-pointer"
-              >
-                <option value="" disabled className="bg-[#0a0a0b]">
-                  Choose Country
-                </option>
-                {countries.map((c) => (
-                  <option key={c.code} value={c.code} className="bg-[#0a0a0b]">
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none group-focus-within:text-white transition-colors">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-              </span>
+          {error && (
+            <div style={styles.errorBox}>
+              <span style={styles.errorDot} />
+              {error}
             </div>
-          </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-2xl shadow-xl shadow-red-600/20 active:scale-[0.98] transition-all mt-4 flex items-center justify-center gap-2 group overflow-hidden relative"
+            style={{
+              ...styles.submitBtn,
+              ...(loading ? styles.submitBtnLoading : {}),
+            }}
           >
-            {loading ? (
-              <svg
-                className="animate-spin h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-            ) : (
-              <>
-                <span className="tracking-wide">Create Account</span>
-                <svg
-                  className="group-hover:translate-x-1 transition-transform"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                  <polyline points="12 5 19 12 12 19" />
-                </svg>
-              </>
-            )}
+            <span style={styles.submitBtnInner}>
+              {loading ? (
+                <>
+                  <Spinner />
+                  <span>Creating account…</span>
+                </>
+              ) : (
+                <span>Create Account</span>
+              )}
+            </span>
+            {!loading && <span style={styles.submitArrow}>→</span>}
           </button>
         </form>
 
-        <p className="text-white/30 text-xs font-semibold tracking-wide">
+        {/* Footer */}
+        <p style={styles.loginText}>
           Already have an account?{" "}
-          <Link
-            to="/auth/login"
-            className="text-red-500 hover:text-red-400 transition-colors"
-          >
-            Sign In
+          <Link to="/auth/login" style={styles.loginLink}>
+            Sign in
           </Link>
         </p>
       </div>
+
+      {showOtpModal && (
+        <OTPModal
+          email={formData.email}
+          onClose={() => setShowOtpModal(false)}
+          onVerify={handleVerifyOtp}
+          onResend={handleResendOtp}
+          verifying={verifying}
+        />
+      )}
+
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: toastStyle,
+        }}
+      />
+      <style>{globalStyles}</style>
     </div>
   );
 };
+
+/* ─── Field component ─── */
+const Field = ({
+  name,
+  type = "text",
+  placeholder,
+  onChange,
+  focused,
+  setFocused,
+  icon,
+  rightAction,
+}) => (
+  <div
+    style={{
+      ...styles.fieldWrap,
+      ...(focused === name ? styles.fieldWrapFocused : {}),
+    }}
+  >
+    {icon && <span style={styles.fieldIcon}>{icon}</span>}
+    <input
+      type={type}
+      name={name}
+      placeholder={placeholder}
+      required
+      onChange={onChange}
+      onFocus={() => setFocused(name)}
+      onBlur={() => setFocused("")}
+      style={{
+        ...styles.input,
+        paddingLeft: icon ? "2.5rem" : "1rem",
+        paddingRight: rightAction ? "2.75rem" : "1rem",
+      }}
+    />
+    {rightAction}
+  </div>
+);
+
+/* ─── SVG Icons ─── */
+const AtIcon = () => (
+  <svg
+    width="15"
+    height="15"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="4" />
+    <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94" />
+  </svg>
+);
+const MailIcon = () => (
+  <svg
+    width="15"
+    height="15"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect width="20" height="16" x="2" y="4" rx="2" />
+    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+  </svg>
+);
+const LockIcon = () => (
+  <svg
+    width="15"
+    height="15"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+const GlobeIcon = ({ style }) => (
+  <span style={style}>
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+      <path d="M2 12h20" />
+    </svg>
+  </span>
+);
+const EyeIcon = () => (
+  <svg
+    width="15"
+    height="15"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+const EyeOffIcon = () => (
+  <svg
+    width="15"
+    height="15"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+    <line x1="2" x2="22" y1="2" y2="22" />
+  </svg>
+);
+const Spinner = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    style={{ animation: "spin 0.8s linear infinite" }}
+  >
+    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+  </svg>
+);
+
+/* ─── Toast style ─── */
+const toastStyle = {
+  background: "rgba(20, 16, 40, 0.95)",
+  color: "#f1f1f8",
+  border: "1px solid rgba(255,255,255,0.1)",
+  borderRadius: "12px",
+  fontSize: "0.85rem",
+  backdropFilter: "blur(12px)",
+  boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+};
+
+/* ─── Styles ─── */
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "#080810",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "2rem 1rem",
+    position: "relative",
+    overflow: "hidden",
+    fontFamily: "'DM Sans', 'Inter', system-ui, sans-serif",
+  },
+  orb1: {
+    position: "absolute",
+    width: "600px",
+    height: "600px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(99,55,255,0.18) 0%, transparent 70%)",
+    top: "-200px",
+    left: "-150px",
+    pointerEvents: "none",
+  },
+  orb2: {
+    position: "absolute",
+    width: "500px",
+    height: "500px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(56,189,248,0.10) 0%, transparent 70%)",
+    bottom: "-100px",
+    right: "-100px",
+    pointerEvents: "none",
+  },
+  orb3: {
+    position: "absolute",
+    width: "300px",
+    height: "300px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(236,72,153,0.08) 0%, transparent 70%)",
+    top: "40%",
+    right: "20%",
+    pointerEvents: "none",
+  },
+  grain: {
+    position: "absolute",
+    inset: 0,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E")`,
+    opacity: 0.4,
+    pointerEvents: "none",
+  },
+  card: {
+    position: "relative",
+    zIndex: 1,
+    width: "100%",
+    maxWidth: "440px",
+    background: "rgba(255,255,255,0.03)",
+    backdropFilter: "blur(24px)",
+    WebkitBackdropFilter: "blur(24px)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "24px",
+    padding: "2rem",
+    boxShadow:
+      "0 0 0 1px rgba(255,255,255,0.03) inset, 0 40px 80px rgba(0,0,0,0.5)",
+  },
+  header: {
+    display: "flex",
+    alignItems: "center",
+    gap: "1rem",
+    marginBottom: "1.5rem",
+  },
+  logoWrap: {
+    position: "relative",
+    flexShrink: 0,
+  },
+  logo: {
+    width: "48px",
+    height: "48px",
+    borderRadius: "14px",
+    display: "block",
+  },
+  logoPulse: {
+    position: "absolute",
+    inset: "-4px",
+    borderRadius: "18px",
+    border: "1px solid rgba(99,55,255,0.4)",
+    animation: "pulse 2.5s ease-in-out infinite",
+  },
+  title: {
+    margin: 0,
+    fontSize: "1.4rem",
+    fontWeight: 600,
+    color: "#f1f1f8",
+    letterSpacing: "-0.02em",
+  },
+  subtitle: {
+    margin: "2px 0 0",
+    fontSize: "0.8rem",
+    color: "rgba(255,255,255,0.35)",
+    letterSpacing: "0.01em",
+  },
+  divider: {
+    height: "1px",
+    background:
+      "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)",
+    marginBottom: "1.5rem",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.65rem",
+  },
+  row: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "0.65rem",
+  },
+  fieldWrap: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "12px",
+    transition: "border-color 0.2s, box-shadow 0.2s, background 0.2s",
+  },
+  fieldWrapFocused: {
+    borderRadius: "12px",
+    borderColor: "rgba(99,55,255,0.5)",
+    background: "rgba(99,55,255,0.06)",
+    boxShadow: "0 0 0 3px rgba(99,55,255,0.12)",
+  },
+  fieldIcon: {
+    position: "absolute",
+    left: "0.85rem",
+    color: "rgba(255,255,255,0.3)",
+    display: "flex",
+    alignItems: "center",
+    pointerEvents: "none",
+  },
+  input: {
+    width: "100%",
+    padding: "0.75rem 1rem",
+    background: "transparent",
+    border: "none",
+    outline: "none",
+    color: "#f1f1f8",
+    fontSize: "0.875rem",
+    letterSpacing: "0.01em",
+  },
+  select: {
+    width: "100%",
+    padding: "0.75rem 1rem 0.75rem 2.5rem",
+    background: "transparent",
+    border: "none",
+    outline: "none",
+    color: "#f1f1f8",
+    fontSize: "0.875rem",
+    cursor: "pointer",
+    appearance: "none",
+    WebkitAppearance: "none",
+  },
+  eyeBtn: {
+    position: "absolute",
+    right: "0.85rem",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    color: "rgba(255,255,255,0.35)",
+    display: "flex",
+    alignItems: "center",
+    padding: "4px",
+    borderRadius: "6px",
+    transition: "color 0.15s",
+  },
+  errorBox: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    padding: "0.65rem 0.875rem",
+    background: "rgba(239,68,68,0.08)",
+    border: "1px solid rgba(239,68,68,0.2)",
+    borderRadius: "10px",
+    color: "#f87171",
+    fontSize: "0.8rem",
+  },
+  errorDot: {
+    width: "6px",
+    height: "6px",
+    borderRadius: "50%",
+    background: "#f87171",
+    flexShrink: 0,
+  },
+  submitBtn: {
+    marginTop: "0.4rem",
+    padding: "0.85rem 1.25rem",
+    background: "linear-gradient(135deg, #6337ff 0%, #8b5cf6 100%)",
+    border: "none",
+    borderRadius: "12px",
+    color: "#fff",
+    fontSize: "0.9rem",
+    fontWeight: 600,
+    letterSpacing: "0.01em",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    transition: "opacity 0.2s, transform 0.15s, box-shadow 0.2s",
+    boxShadow: "0 4px 20px rgba(99,55,255,0.35)",
+    position: "relative",
+    overflow: "hidden",
+  },
+  submitBtnLoading: {
+    opacity: 0.7,
+    cursor: "not-allowed",
+  },
+  submitBtnInner: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+  },
+  submitArrow: {
+    fontSize: "1.1rem",
+    transition: "transform 0.2s",
+  },
+  loginText: {
+    marginTop: "1.25rem",
+    textAlign: "center",
+    fontSize: "0.8rem",
+    color: "rgba(255,255,255,0.35)",
+  },
+  loginLink: {
+    color: "#a78bfa",
+    textDecoration: "none",
+    fontWeight: 500,
+  },
+};
+
+const globalStyles = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  * { box-sizing: border-box; }
+
+  input::placeholder, select option[value=""] {
+    color: rgba(255,255,255,0.25);
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #0d0b1a inset !important;
+    -webkit-text-fill-color: #f1f1f8 !important;
+    caret-color: #f1f1f8;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.04); }
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  div[style*="maxWidth: 440px"] {
+    animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  button[type="submit"]:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 30px rgba(99,55,255,0.45) !important;
+  }
+
+  button[type="submit"]:not(:disabled):active {
+    transform: translateY(0);
+  }
+
+  button[type="submit"]:not(:disabled):hover span:last-child {
+    transform: translateX(3px);
+  }
+
+  a:hover { text-decoration: underline; }
+`;
 
 export default Register;
