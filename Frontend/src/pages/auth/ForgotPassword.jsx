@@ -114,7 +114,7 @@ const ForgotPassword = () => {
 
       <div style={styles.card} key={step}>
         {/* ── Back link ── */}
-        <Link to="/login" style={styles.backLink}>
+        <Link to="/auth/login" style={styles.backLink}>
           <ChevronLeftIcon />
           Back to sign in
         </Link>
@@ -338,7 +338,7 @@ const ForgotPassword = () => {
 
         <p style={styles.footerText}>
           Remembered it?{" "}
-          <Link to="/login" style={styles.footerLink}>
+          <Link to="/auth/login" style={styles.footerLink}>
             Sign in
           </Link>
         </p>

@@ -16,5 +16,11 @@ router.post("/refresh", authController.refreshAccessToken);
 router.post("/logout", authMiddleware, authController.logoutUser);
 router.post("/logout-all", authMiddleware, authController.logoutAll);
 router.post("/change-password", authMiddleware, authController.changePassword);
+router.post("/delete-user", authMiddleware, authController.deleteCurrentUser);
+router.post(
+  "/verify-delete-user",
+  authMiddleware,
+  authController.verifyDeleteCurrentUser,
+);
 
 export default router;

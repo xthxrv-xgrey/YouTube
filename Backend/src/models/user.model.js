@@ -55,7 +55,7 @@ const userSchema = new mongoose.Schema(
       default:
         "https://res.cloudinary.com/dfndzxbvm/image/upload/v1774013509/user-pfp-default_vm1pzx.jpg",
     },
-    channelBanner: {
+    banner: {
       type: String,
       default:
         "https://res.cloudinary.com/dfndzxbvm/image/upload/v1774013489/channel-banner-default_lacjyo.png",

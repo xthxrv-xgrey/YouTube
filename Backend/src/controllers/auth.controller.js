@@ -6,9 +6,9 @@ import { hashToken } from "../utils/hashToken.js";
 import jwt from "jsonwebtoken";
 import * as emailService from "../services/email.service.js";
 import { User } from "../models/user.model.js";
-import { Session } from "../models/session.model.js";
-import { UnverifiedUser } from "../models/unverifiedUser.model.js";
-import { ResetPasswordUser } from "../models/resetPasswordUser.model.js";
+import { Session } from "../models/userSubModels/session.model.js";
+import { UnverifiedUser } from "../models/userSubModels/unverifiedUser.model.js";
+import { ResetPasswordUser } from "../models/userSubModels/resetPasswordUser.model.js";
 
 const validatePassword = (password) => {
   if (password.length < 6 || password.length > 30) {
@@ -447,4 +447,64 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
       accessToken,
     }),
   );
+});
+
+// @desc Delete current user
+// @route DELETE /api/v1/auth/me
+// @access Private
+export const deleteCurrentUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  const existingDeleteUser = await DeleteUser.findOne({ userId: user._id });
+  if (existingDeleteUser) {
+    const diff = (Date.now() - existingDeleteUser.createdAt) / 1000;
+    if (diff < 60) {
+      throw new ApiError(
+        400,
+        `Please wait ${Math.ceil(60 - diff)} seconds before requesting a new OTP.`,
+      );
+    }
+    await DeleteUser.deleteOne({ userId: user._id });
+  }
+
+  const otp = await sendOtp(
+    user.email,
+    "Use the code below to verify your email address",
+    "5 minutes",
+  );
+  const hashedOtp = hashToken(otp);
+
+  await DeleteUser.create({
+    userId: user._id,
+    otp: hashedOtp,
+  });
+
+  return res.status(200).json(
+    new ApiResponse(200, "User deletion request sent successfully.", {
+      email: user.email,
+    }),
+  );
+});
+
+// @desc Verify delete current user
+// @route POST /api/v1/auth/verify-delete-user
+// @access Private
+export const verifyDeleteCurrentUser = asyncHandler(async (req, res) => {
+  const { otp } = req.body;
+  const userId = req.user._id;
+
+  if (!otp) throw new ApiError(400, "OTP is required.");
+
+  const deleteUser = await DeleteUser.findOne({ userId });
+  if (!deleteUser) throw new ApiError(400, "Invalid OTP.");
+
+  if (deleteUser.otp !== hashToken(otp))
+    throw new ApiError(400, "Invalid OTP.");
+
+  const user = await User.findByIdAndDelete(deleteUser.userId);
+  await DeleteUser.deleteOne({ userId });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "User deleted successfully.", user));
 });

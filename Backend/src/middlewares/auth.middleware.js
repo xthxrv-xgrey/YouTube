@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { config } from "../config/config.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import { Session } from "../models/session.model.js";
+import { Session } from "../models/userSubModels/session.model.js";
 
 /**
  * Middleware to protect routes that require authentication.
