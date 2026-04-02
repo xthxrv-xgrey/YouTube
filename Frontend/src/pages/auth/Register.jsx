@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
+import useAuthStore from "../../store/useAuthStore";
 import logo from "../../assets/images/favicon_144x144.png";
 import OTPModal from "../../components/modals/OTPModal";
 
@@ -34,7 +35,6 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [verifying, setVerifying] = useState(false);
-  const [focused, setFocused] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -90,47 +90,37 @@ const Register = () => {
   };
 
   return (
-    <div style={styles.page}>
-      {/* Ambient orbs */}
-      <div style={styles.orb1} />
-      <div style={styles.orb2} />
-      <div style={styles.orb3} />
-
-      {/* Noise grain overlay */}
-      <div style={styles.grain} />
-
-      <div style={styles.card}>
+    <div className="min-h-screen flex items-center justify-center py-10 px-4">
+      <div className="w-full max-w-[460px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-xl transition-colors duration-300">
         {/* Header */}
-        <div style={styles.header}>
-          <div style={styles.logoWrap}>
-            <img src={logo} alt="Logo" style={styles.logo} />
-            <div style={styles.logoPulse} />
-          </div>
+        <div className="flex flex-col items-center gap-4 mb-8 text-center">
+          <img
+            src={logo}
+            alt="Logo"
+            className="w-14 h-14 rounded-xl object-contain shadow-sm"
+          />
           <div>
-            <h1 style={styles.title}>Create Account</h1>
-            <p style={styles.subtitle}>Start your journey today</p>
+            <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white tracking-tight">
+              Create Account
+            </h1>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+              Start your journey today
+            </p>
           </div>
         </div>
 
-        {/* Divider */}
-        <div style={styles.divider} />
-
         {/* Form */}
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.row}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <Field
               name="firstName"
               placeholder="First name"
               onChange={handleChange}
-              focused={focused}
-              setFocused={setFocused}
             />
             <Field
               name="lastName"
               placeholder="Last name"
               onChange={handleChange}
-              focused={focused}
-              setFocused={setFocused}
             />
           </div>
 
@@ -138,8 +128,6 @@ const Register = () => {
             name="username"
             placeholder="Username"
             onChange={handleChange}
-            focused={focused}
-            setFocused={setFocused}
             icon={<AtIcon />}
           />
 
@@ -148,8 +136,6 @@ const Register = () => {
             type="email"
             placeholder="Email address"
             onChange={handleChange}
-            focused={focused}
-            setFocused={setFocused}
             icon={<MailIcon />}
           />
 
@@ -158,14 +144,12 @@ const Register = () => {
             type={showPassword ? "text" : "password"}
             placeholder="Password"
             onChange={handleChange}
-            focused={focused}
-            setFocused={setFocused}
             icon={<LockIcon />}
             rightAction={
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                style={styles.eyeBtn}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors rounded-md"
               >
                 {showPassword ? <EyeOffIcon /> : <EyeIcon />}
               </button>
@@ -173,35 +157,45 @@ const Register = () => {
           />
 
           {/* Country Select */}
-          <div
-            style={{
-              ...styles.fieldWrap,
-              ...(focused === "country" ? styles.fieldWrapFocused : {}),
-            }}
-          >
-            <GlobeIcon style={styles.fieldIcon} />
+          <div className="relative flex items-center">
+            <span className="absolute left-3.5 text-zinc-400 dark:text-zinc-500 pointer-events-none">
+              <GlobeIcon />
+            </span>
             <select
               name="country"
               required
               onChange={handleChange}
-              onFocus={() => setFocused("country")}
-              onBlur={() => setFocused("")}
-              style={styles.select}
+              className="w-full bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:focus:border-blue-500 transition-all pl-10 pr-4 py-2.5 appearance-none cursor-pointer"
             >
-              <option value="" style={{ background: "#0d0d14" }}>
+              <option value="" disabled selected className="text-zinc-400">
                 Select country
               </option>
               {countries.map((c, i) => (
-                <option key={i} value={c} style={{ background: "#0d0d14" }}>
+                <option key={i} value={c} className="bg-white dark:bg-zinc-900">
                   {c}
                 </option>
               ))}
             </select>
+            {/* Custom dropdown arrow */}
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </span>
           </div>
 
           {error && (
-            <div style={styles.errorBox}>
-              <span style={styles.errorDot} />
+            <div className="flex items-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl text-red-600 dark:text-red-400 text-sm">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
               {error}
             </div>
           )}
@@ -209,29 +203,26 @@ const Register = () => {
           <button
             type="submit"
             disabled={loading}
-            style={{
-              ...styles.submitBtn,
-              ...(loading ? styles.submitBtnLoading : {}),
-            }}
+            className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:opacity-70 disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl transition-all shadow-sm shadow-red-600/20"
           >
-            <span style={styles.submitBtnInner}>
-              {loading ? (
-                <>
-                  <Spinner />
-                  <span>Creating account…</span>
-                </>
-              ) : (
-                <span>Create Account</span>
-              )}
-            </span>
-            {!loading && <span style={styles.submitArrow}>→</span>}
+            {loading ? (
+              <>
+                <Spinner />
+                <span>Creating account…</span>
+              </>
+            ) : (
+              <span>Create Account</span>
+            )}
           </button>
         </form>
 
         {/* Footer */}
-        <p style={styles.loginText}>
+        <p className="mt-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
           Already have an account?{" "}
-          <Link to="/auth/login" style={styles.loginLink}>
+          <Link
+            to="/auth/login"
+            className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+          >
             Sign in
           </Link>
         </p>
@@ -253,7 +244,6 @@ const Register = () => {
           style: toastStyle,
         }}
       />
-      <style>{globalStyles}</style>
     </div>
   );
 };
@@ -264,31 +254,23 @@ const Field = ({
   type = "text",
   placeholder,
   onChange,
-  focused,
-  setFocused,
   icon,
   rightAction,
 }) => (
-  <div
-    style={{
-      ...styles.fieldWrap,
-      ...(focused === name ? styles.fieldWrapFocused : {}),
-    }}
-  >
-    {icon && <span style={styles.fieldIcon}>{icon}</span>}
+  <div className="relative flex items-center">
+    {icon && (
+      <span className="absolute left-3.5 text-zinc-400 dark:text-zinc-500 pointer-events-none">
+        {icon}
+      </span>
+    )}
     <input
       type={type}
       name={name}
       placeholder={placeholder}
       required
       onChange={onChange}
-      onFocus={() => setFocused(name)}
-      onBlur={() => setFocused("")}
-      style={{
-        ...styles.input,
-        paddingLeft: icon ? "2.5rem" : "1rem",
-        paddingRight: rightAction ? "2.75rem" : "1rem",
-      }}
+      className={`w-full bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:focus:border-blue-500 transition-all placeholder-zinc-400 dark:placeholder-zinc-600
+        ${icon ? "pl-10" : "pl-4"} ${rightAction ? "pr-10" : "pr-4"} py-2.5`}
     />
     {rightAction}
   </div>
@@ -297,8 +279,8 @@ const Field = ({
 /* ─── SVG Icons ─── */
 const AtIcon = () => (
   <svg
-    width="15"
-    height="15"
+    width="18"
+    height="18"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -312,8 +294,8 @@ const AtIcon = () => (
 );
 const MailIcon = () => (
   <svg
-    width="15"
-    height="15"
+    width="18"
+    height="18"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -327,8 +309,8 @@ const MailIcon = () => (
 );
 const LockIcon = () => (
   <svg
-    width="15"
-    height="15"
+    width="18"
+    height="18"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -340,28 +322,26 @@ const LockIcon = () => (
     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
   </svg>
 );
-const GlobeIcon = ({ style }) => (
-  <span style={style}>
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-      <path d="M2 12h20" />
-    </svg>
-  </span>
+const GlobeIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+    <path d="M2 12h20" />
+  </svg>
 );
 const EyeIcon = () => (
   <svg
-    width="15"
-    height="15"
+    width="18"
+    height="18"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -375,8 +355,8 @@ const EyeIcon = () => (
 );
 const EyeOffIcon = () => (
   <svg
-    width="15"
-    height="15"
+    width="18"
+    height="18"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -399,7 +379,7 @@ const Spinner = () => (
     stroke="currentColor"
     strokeWidth="2"
     strokeLinecap="round"
-    style={{ animation: "spin 0.8s linear infinite" }}
+    className="animate-spin"
   >
     <path d="M21 12a9 9 0 1 1-6.219-8.56" />
   </svg>
@@ -407,307 +387,11 @@ const Spinner = () => (
 
 /* ─── Toast style ─── */
 const toastStyle = {
-  background: "rgba(20, 16, 40, 0.95)",
-  color: "#f1f1f8",
-  border: "1px solid rgba(255,255,255,0.1)",
+  background: "#18181B", // zinc-900
+  color: "#F4F4F5", // zinc-50
+  border: "1px solid #27272A", // zinc-800
   borderRadius: "12px",
-  fontSize: "0.85rem",
-  backdropFilter: "blur(12px)",
-  boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+  fontSize: "0.875rem",
 };
-
-/* ─── Styles ─── */
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#080810",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "2rem 1rem",
-    position: "relative",
-    overflow: "hidden",
-    fontFamily: "'DM Sans', 'Inter', system-ui, sans-serif",
-  },
-  orb1: {
-    position: "absolute",
-    width: "600px",
-    height: "600px",
-    borderRadius: "50%",
-    background:
-      "radial-gradient(circle, rgba(99,55,255,0.18) 0%, transparent 70%)",
-    top: "-200px",
-    left: "-150px",
-    pointerEvents: "none",
-  },
-  orb2: {
-    position: "absolute",
-    width: "500px",
-    height: "500px",
-    borderRadius: "50%",
-    background:
-      "radial-gradient(circle, rgba(56,189,248,0.10) 0%, transparent 70%)",
-    bottom: "-100px",
-    right: "-100px",
-    pointerEvents: "none",
-  },
-  orb3: {
-    position: "absolute",
-    width: "300px",
-    height: "300px",
-    borderRadius: "50%",
-    background:
-      "radial-gradient(circle, rgba(236,72,153,0.08) 0%, transparent 70%)",
-    top: "40%",
-    right: "20%",
-    pointerEvents: "none",
-  },
-  grain: {
-    position: "absolute",
-    inset: 0,
-    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E")`,
-    opacity: 0.4,
-    pointerEvents: "none",
-  },
-  card: {
-    position: "relative",
-    zIndex: 1,
-    width: "100%",
-    maxWidth: "440px",
-    background: "rgba(255,255,255,0.03)",
-    backdropFilter: "blur(24px)",
-    WebkitBackdropFilter: "blur(24px)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "24px",
-    padding: "2rem",
-    boxShadow:
-      "0 0 0 1px rgba(255,255,255,0.03) inset, 0 40px 80px rgba(0,0,0,0.5)",
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    gap: "1rem",
-    marginBottom: "1.5rem",
-  },
-  logoWrap: {
-    position: "relative",
-    flexShrink: 0,
-  },
-  logo: {
-    width: "48px",
-    height: "48px",
-    borderRadius: "14px",
-    display: "block",
-  },
-  logoPulse: {
-    position: "absolute",
-    inset: "-4px",
-    borderRadius: "18px",
-    border: "1px solid rgba(99,55,255,0.4)",
-    animation: "pulse 2.5s ease-in-out infinite",
-  },
-  title: {
-    margin: 0,
-    fontSize: "1.4rem",
-    fontWeight: 600,
-    color: "#f1f1f8",
-    letterSpacing: "-0.02em",
-  },
-  subtitle: {
-    margin: "2px 0 0",
-    fontSize: "0.8rem",
-    color: "rgba(255,255,255,0.35)",
-    letterSpacing: "0.01em",
-  },
-  divider: {
-    height: "1px",
-    background:
-      "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)",
-    marginBottom: "1.5rem",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.65rem",
-  },
-  row: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "0.65rem",
-  },
-  fieldWrap: {
-    position: "relative",
-    display: "flex",
-    alignItems: "center",
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "12px",
-    transition: "border-color 0.2s, box-shadow 0.2s, background 0.2s",
-  },
-  fieldWrapFocused: {
-    borderRadius: "12px",
-    borderColor: "rgba(99,55,255,0.5)",
-    background: "rgba(99,55,255,0.06)",
-    boxShadow: "0 0 0 3px rgba(99,55,255,0.12)",
-  },
-  fieldIcon: {
-    position: "absolute",
-    left: "0.85rem",
-    color: "rgba(255,255,255,0.3)",
-    display: "flex",
-    alignItems: "center",
-    pointerEvents: "none",
-  },
-  input: {
-    width: "100%",
-    padding: "0.75rem 1rem",
-    background: "transparent",
-    border: "none",
-    outline: "none",
-    color: "#f1f1f8",
-    fontSize: "0.875rem",
-    letterSpacing: "0.01em",
-  },
-  select: {
-    width: "100%",
-    padding: "0.75rem 1rem 0.75rem 2.5rem",
-    background: "transparent",
-    border: "none",
-    outline: "none",
-    color: "#f1f1f8",
-    fontSize: "0.875rem",
-    cursor: "pointer",
-    appearance: "none",
-    WebkitAppearance: "none",
-  },
-  eyeBtn: {
-    position: "absolute",
-    right: "0.85rem",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    color: "rgba(255,255,255,0.35)",
-    display: "flex",
-    alignItems: "center",
-    padding: "4px",
-    borderRadius: "6px",
-    transition: "color 0.15s",
-  },
-  errorBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-    padding: "0.65rem 0.875rem",
-    background: "rgba(239,68,68,0.08)",
-    border: "1px solid rgba(239,68,68,0.2)",
-    borderRadius: "10px",
-    color: "#f87171",
-    fontSize: "0.8rem",
-  },
-  errorDot: {
-    width: "6px",
-    height: "6px",
-    borderRadius: "50%",
-    background: "#f87171",
-    flexShrink: 0,
-  },
-  submitBtn: {
-    marginTop: "0.4rem",
-    padding: "0.85rem 1.25rem",
-    background: "linear-gradient(135deg, #6337ff 0%, #8b5cf6 100%)",
-    border: "none",
-    borderRadius: "12px",
-    color: "#fff",
-    fontSize: "0.9rem",
-    fontWeight: 600,
-    letterSpacing: "0.01em",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    transition: "opacity 0.2s, transform 0.15s, box-shadow 0.2s",
-    boxShadow: "0 4px 20px rgba(99,55,255,0.35)",
-    position: "relative",
-    overflow: "hidden",
-  },
-  submitBtnLoading: {
-    opacity: 0.7,
-    cursor: "not-allowed",
-  },
-  submitBtnInner: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-  },
-  submitArrow: {
-    fontSize: "1.1rem",
-    transition: "transform 0.2s",
-  },
-  loginText: {
-    marginTop: "1.25rem",
-    textAlign: "center",
-    fontSize: "0.8rem",
-    color: "rgba(255,255,255,0.35)",
-  },
-  loginLink: {
-    color: "#a78bfa",
-    textDecoration: "none",
-    fontWeight: 500,
-  },
-};
-
-const globalStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
-
-  * { box-sizing: border-box; }
-
-  input::placeholder, select option[value=""] {
-    color: rgba(255,255,255,0.25);
-  }
-
-  input:-webkit-autofill,
-  input:-webkit-autofill:hover,
-  input:-webkit-autofill:focus,
-  input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px #0d0b1a inset !important;
-    -webkit-text-fill-color: #f1f1f8 !important;
-    caret-color: #f1f1f8;
-    transition: background-color 5000s ease-in-out 0s;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 0.4; transform: scale(1); }
-    50% { opacity: 0.8; transform: scale(1.04); }
-  }
-
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  div[style*="maxWidth: 440px"] {
-    animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-
-  button[type="submit"]:not(:disabled):hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 30px rgba(99,55,255,0.45) !important;
-  }
-
-  button[type="submit"]:not(:disabled):active {
-    transform: translateY(0);
-  }
-
-  button[type="submit"]:not(:disabled):hover span:last-child {
-    transform: translateX(3px);
-  }
-
-  a:hover { text-decoration: underline; }
-`;
 
 export default Register;

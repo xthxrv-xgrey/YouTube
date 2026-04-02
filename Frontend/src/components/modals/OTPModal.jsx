@@ -65,48 +65,33 @@ const OTPModal = ({ email, onClose, onVerify, onResend, verifying }) => {
 
   return (
     <div
-      style={styles.overlay}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div style={styles.modal}>
-        {/* Ambient glow */}
-        <div style={styles.glow} />
-
+      <div className="relative w-full max-w-[360px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 sm:p-7 flex flex-col items-center gap-5 shadow-2xl animate-in slide-in-from-bottom-6 duration-300">
+        
         {/* Icon */}
-        <div style={styles.iconWrap}>
-          <div style={styles.iconRing} />
-          <svg
-            width="26"
-            height="26"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="rgba(167,139,250,0.9)"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
+        <div className="relative w-14 h-14 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-2xl flex items-center justify-center text-red-600 dark:text-red-400">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <rect width="20" height="16" x="2" y="4" rx="2" />
             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
           </svg>
         </div>
 
         {/* Text */}
-        <div style={styles.textBlock}>
-          <h2 style={styles.title}>Check your email</h2>
-          <p style={styles.subtitle}>We sent a 6-digit code to</p>
-          <p style={styles.email}>{maskedEmail}</p>
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mb-1 tracking-tight">Check your email</h2>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-snug">We sent a 6-digit code to</p>
+          <p className="text-sm font-medium text-red-600 dark:text-red-400 mt-1">{maskedEmail}</p>
         </div>
 
         {/* OTP Inputs */}
         <div
-          style={{
-            ...styles.otpRow,
-            ...(shake ? styles.shake : {}),
-          }}
+          className={`flex gap-2 justify-center w-full ${shake ? 'animate-[shake_0.4s_ease-in-out]' : ''}`}
           onPaste={handlePaste}
         >
           {otp.map((digit, index) => (
-            <div key={index} style={styles.digitWrap}>
+            <div key={index} className="relative flex flex-col items-center gap-1.5">
               <input
                 ref={(el) => (inputsRef.current[index] = el)}
                 type="text"
@@ -115,28 +100,22 @@ const OTPModal = ({ email, onClose, onVerify, onResend, verifying }) => {
                 value={digit}
                 onChange={(e) => handleChange(e.target.value, index)}
                 onKeyDown={(e) => handleKeyDown(e, index)}
-                style={{
-                  ...styles.digitInput,
-                  ...(digit ? styles.digitInputFilled : {}),
-                }}
+                className={`w-11 h-12 text-center text-xl font-semibold font-mono text-zinc-900 dark:text-zinc-50 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-xl outline-none transition-all placeholder-zinc-400 focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 ${digit ? 'border-red-500/50 dark:border-red-500/50 bg-red-50/50 dark:bg-red-500/10' : ''}`}
               />
-              {/* Bottom bar indicator */}
-              <div
-                style={{
-                  ...styles.digitBar,
-                  ...(digit ? styles.digitBarFilled : {}),
-                }}
-              />
+              <div className={`w-5 h-0.5 rounded-full transition-all duration-200 ${digit ? 'bg-red-500 scale-x-125' : 'bg-zinc-200 dark:bg-zinc-800'}`} />
             </div>
           ))}
         </div>
 
         {/* Timer bar */}
-        <div style={styles.timerWrap}>
-          <div style={styles.timerTrack}>
-            <div style={{ ...styles.timerFill, width: `${progress}%` }} />
+        <div className="w-full flex flex-col gap-1.5 mt-1">
+          <div className="w-full h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+            <div 
+               className="h-full bg-red-500 rounded-full transition-all duration-1000 ease-linear"
+               style={{ width: `${progress}%` }} 
+             />
           </div>
-          <span style={styles.timerText}>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 text-center tracking-wide">
             {timeLeft > 0 ? `Expires in ${formatTime()}` : "Code expired"}
           </span>
         </div>
@@ -145,349 +124,56 @@ const OTPModal = ({ email, onClose, onVerify, onResend, verifying }) => {
         <button
           onClick={handleVerifyClick}
           disabled={verifying || !allFilled}
-          style={{
-            ...styles.verifyBtn,
-            ...(!allFilled || verifying ? styles.verifyBtnDisabled : {}),
-          }}
+          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl transition-all shadow-sm shadow-red-600/20 mt-1"
         >
           {verifying ? (
-            <span style={styles.btnInner}>
+            <>
               <Spinner />
-              Verifying…
-            </span>
+              <span>Verifying…</span>
+            </>
           ) : (
-            <span style={styles.btnInner}>
+            <>
               <CheckIcon />
-              Verify Code
-            </span>
+              <span>Verify Code</span>
+            </>
           )}
         </button>
 
         {/* Footer actions */}
-        <div style={styles.footer}>
+        <div className="flex items-center gap-2 mt-2">
           <button
             disabled={timeLeft > 0}
             onClick={() => {
               setTimeLeft(300);
               onResend();
             }}
-            style={{
-              ...styles.resendBtn,
-              ...(timeLeft > 0
-                ? styles.resendBtnDisabled
-                : styles.resendBtnActive),
-            }}
+            className={`text-sm font-medium transition-colors ${timeLeft > 0 ? 'text-zinc-400 dark:text-zinc-600 cursor-not-allowed' : 'text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300'}`}
           >
             Resend code
           </button>
-          <span style={styles.dot}>·</span>
-          <button onClick={onClose} style={styles.cancelBtn}>
+          <span className="text-zinc-300 dark:text-zinc-700 font-bold">·</span>
+          <button 
+            onClick={onClose} 
+            className="text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+          >
             Cancel
           </button>
         </div>
       </div>
-
-      <style>{globalStyles}</style>
     </div>
   );
 };
 
 /* ─── Icons ─── */
 const Spinner = () => (
-  <svg
-    width="15"
-    height="15"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    style={{ animation: "spin 0.7s linear infinite", flexShrink: 0 }}
-  >
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="animate-spin shrink-0">
     <path d="M21 12a9 9 0 1 1-6.219-8.56" />
   </svg>
 );
 const CheckIcon = () => (
-  <svg
-    width="15"
-    height="15"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ flexShrink: 0 }}
-  >
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
     <path d="M20 6 9 17l-5-5" />
   </svg>
 );
-
-/* ─── Styles ─── */
-const styles = {
-  overlay: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(0,0,0,0.75)",
-    backdropFilter: "blur(8px)",
-    WebkitBackdropFilter: "blur(8px)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 50,
-    padding: "1rem",
-    animation: "fadeIn 0.2s ease",
-  },
-  modal: {
-    position: "relative",
-    width: "100%",
-    maxWidth: "360px",
-    background: "rgba(15,12,30,0.95)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: "24px",
-    padding: "2rem 1.75rem",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "1.25rem",
-    boxShadow:
-      "0 0 0 1px rgba(255,255,255,0.04) inset, 0 40px 80px rgba(0,0,0,0.6)",
-    animation: "slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both",
-    overflow: "hidden",
-  },
-  glow: {
-    position: "absolute",
-    top: "-80px",
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: "300px",
-    height: "200px",
-    borderRadius: "50%",
-    background:
-      "radial-gradient(circle, rgba(99,55,255,0.2) 0%, transparent 70%)",
-    pointerEvents: "none",
-  },
-  iconWrap: {
-    position: "relative",
-    width: "60px",
-    height: "60px",
-    background: "rgba(99,55,255,0.12)",
-    border: "1px solid rgba(99,55,255,0.25)",
-    borderRadius: "18px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconRing: {
-    position: "absolute",
-    inset: "-5px",
-    borderRadius: "22px",
-    border: "1px solid rgba(99,55,255,0.2)",
-    animation: "pulse 2s ease-in-out infinite",
-  },
-  textBlock: {
-    textAlign: "center",
-  },
-  title: {
-    margin: "0 0 6px",
-    fontSize: "1.2rem",
-    fontWeight: 600,
-    color: "#f1f1f8",
-    letterSpacing: "-0.02em",
-    fontFamily: "'DM Sans', system-ui, sans-serif",
-  },
-  subtitle: {
-    margin: 0,
-    fontSize: "0.82rem",
-    color: "rgba(255,255,255,0.4)",
-    lineHeight: 1.5,
-  },
-  email: {
-    margin: "4px 0 0",
-    fontSize: "0.85rem",
-    color: "#a78bfa",
-    fontWeight: 500,
-  },
-  otpRow: {
-    display: "flex",
-    gap: "10px",
-    justifyContent: "center",
-    width: "100%",
-  },
-  shake: {
-    animation: "shake 0.4s cubic-bezier(.36,.07,.19,.97) both",
-  },
-  digitWrap: {
-    position: "relative",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "4px",
-  },
-  digitInput: {
-    width: "44px",
-    height: "52px",
-    textAlign: "center",
-    fontSize: "1.25rem",
-    fontWeight: 600,
-    fontFamily: "'DM Mono', 'Fira Code', monospace",
-    color: "#f1f1f8",
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "12px",
-    outline: "none",
-    transition: "border-color 0.15s, background 0.15s, box-shadow 0.15s",
-    letterSpacing: "0.05em",
-    caretColor: "#6337ff",
-  },
-  digitInputFilled: {
-    borderColor: "rgba(99,55,255,0.5)",
-    background: "rgba(99,55,255,0.1)",
-    boxShadow: "0 0 0 3px rgba(99,55,255,0.12)",
-  },
-  digitBar: {
-    width: "20px",
-    height: "2px",
-    borderRadius: "2px",
-    background: "rgba(255,255,255,0.1)",
-    transition: "background 0.2s, transform 0.2s",
-  },
-  digitBarFilled: {
-    background: "#6337ff",
-    transform: "scaleX(1.3)",
-  },
-  timerWrap: {
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-  },
-  timerTrack: {
-    width: "100%",
-    height: "2px",
-    background: "rgba(255,255,255,0.06)",
-    borderRadius: "2px",
-    overflow: "hidden",
-  },
-  timerFill: {
-    height: "100%",
-    background: "linear-gradient(90deg, #6337ff, #a78bfa)",
-    borderRadius: "2px",
-    transition: "width 1s linear",
-  },
-  timerText: {
-    fontSize: "0.75rem",
-    color: "rgba(255,255,255,0.3)",
-    textAlign: "center",
-    letterSpacing: "0.02em",
-  },
-  verifyBtn: {
-    width: "100%",
-    padding: "0.85rem",
-    background: "linear-gradient(135deg, #6337ff 0%, #8b5cf6 100%)",
-    border: "none",
-    borderRadius: "12px",
-    color: "#fff",
-    fontSize: "0.9rem",
-    fontWeight: 600,
-    cursor: "pointer",
-    transition: "opacity 0.2s, transform 0.15s, box-shadow 0.2s",
-    boxShadow: "0 4px 20px rgba(99,55,255,0.35)",
-    fontFamily: "'DM Sans', system-ui, sans-serif",
-  },
-  verifyBtnDisabled: {
-    opacity: 0.4,
-    cursor: "not-allowed",
-    boxShadow: "none",
-  },
-  btnInner: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-  },
-  footer: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  resendBtn: {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "0.78rem",
-    fontFamily: "'DM Sans', system-ui, sans-serif",
-    transition: "color 0.15s",
-    padding: "2px 0",
-  },
-  resendBtnActive: {
-    color: "#a78bfa",
-  },
-  resendBtnDisabled: {
-    color: "rgba(255,255,255,0.2)",
-    cursor: "not-allowed",
-  },
-  dot: {
-    color: "rgba(255,255,255,0.2)",
-    fontSize: "1rem",
-  },
-  cancelBtn: {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "0.78rem",
-    color: "rgba(255,255,255,0.3)",
-    fontFamily: "'DM Sans', system-ui, sans-serif",
-    transition: "color 0.15s",
-    padding: "2px 0",
-  },
-};
-
-const globalStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap');
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(24px) scale(0.97); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 0.4; transform: scale(1); }
-    50% { opacity: 0.8; transform: scale(1.06); }
-  }
-
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  @keyframes shake {
-    10%, 90% { transform: translateX(-2px); }
-    20%, 80% { transform: translateX(4px); }
-    30%, 50%, 70% { transform: translateX(-6px); }
-    40%, 60% { transform: translateX(6px); }
-  }
-
-  input[type="text"]:focus {
-    border-color: rgba(99,55,255,0.6) !important;
-    background: rgba(99,55,255,0.1) !important;
-    box-shadow: 0 0 0 3px rgba(99,55,255,0.15) !important;
-  }
-
-  button:not(:disabled):hover {
-    opacity: 0.88;
-  }
-
-  button[style*="linear-gradient"]:not(:disabled):hover {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 8px 28px rgba(99,55,255,0.45) !important;
-    opacity: 1 !important;
-  }
-`;
 
 export default OTPModal;

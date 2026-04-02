@@ -6,8 +6,13 @@ const api = axios.create({
 });
 
 // Attach the access token to every request
+let authStore;
+export const injectStore = (store) => {
+  authStore = store;
+};
+
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
+  const token = authStore ? authStore.getState().accessToken : localStorage.getItem("accessToken");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -51,13 +56,14 @@ api.interceptors.response.use(
         const { accessToken } = res.data.data;
         localStorage.setItem("accessToken", accessToken);
         api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+        if (authStore) authStore.getState().setAccessToken(accessToken);
         processQueue(null, accessToken);
         original.headers.Authorization = `Bearer ${accessToken}`;
         return api(original);
       } catch (refreshError) {
         processQueue(refreshError, null);
         localStorage.removeItem("accessToken");
-        window.location.href = "/login"; // force logout
+        window.location.href = "/auth/login"; // force logout
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
