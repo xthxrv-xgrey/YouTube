@@ -1,15 +1,31 @@
 import { User } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadOnCloudinary } from "../services/cloudinary.service.js";
+import jwt from "jsonwebtoken";
 
 // @desc Get current user
 // @route GET /api/v1/users/me
 // @access Private
 export const getCurrentUser = asyncHandler(async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) {
+    throw new ApiError(401, "Unauthorized");
+  }
+  let decoded;
+  try {
+    decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+  } catch (error) {
+    throw new ApiError(401, "Invalid refresh token.");
+  }
+  const user = await User.findById(decoded._id);
+  if (!user) {
+    throw new ApiError(404, "User not found.");
+  }
   return res
     .status(200)
-    .json(new ApiResponse(200, "User fetched successfully.", req.user));
+    .json(new ApiResponse(200, "User fetched successfully.", user));
 });
 
 // @desc Update current user
@@ -77,7 +93,7 @@ export const updateCurrentUserAvatar = asyncHandler(async (req, res) => {
 // @desc Update current user avatar
 // @route PATCH /api/v1/users/me/avatar
 // @access Private
-export const updateCurrentUserBanner = asyncHandler(async (req, res) => {
+export const updateCurrentBanner = asyncHandler(async (req, res) => {
   const bannerLocalPath = req.file?.path;
 
   if (!bannerLocalPath) {
@@ -93,7 +109,7 @@ export const updateCurrentUserBanner = asyncHandler(async (req, res) => {
   const user = await User.findByIdAndUpdate(
     req.user._id,
     {
-      banner: banner.url,
+      channelBanner: banner.url,
     },
     { new: true },
   );

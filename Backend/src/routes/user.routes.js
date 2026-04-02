@@ -5,19 +5,19 @@ import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
-router.get("/me", authMiddleware, userController.getCurrentUser);
-router.patch("/me", authMiddleware, userController.updateCurrentUser);
-router.patch(
+router.get("/me", userController.getCurrentUser);
+router.post("/me", authMiddleware, userController.updateCurrentUser);
+router.post(
   "/me/avatar",
   authMiddleware,
   upload.single("avatar"),
   userController.updateCurrentUserAvatar,
 );
-router.patch(
+router.post(
   "/me/banner",
   authMiddleware,
   upload.single("banner"),
-  userController.updateCurrentUserBanner,
+  userController.updateCurrentBanner,
 );
 
 export default router;
