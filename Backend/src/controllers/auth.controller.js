@@ -9,6 +9,7 @@ import { User } from "../models/user.model.js";
 import { Session } from "../models/userSubModels/session.model.js";
 import { UnverifiedUser } from "../models/userSubModels/unverifiedUser.model.js";
 import { ResetPasswordUser } from "../models/userSubModels/resetPasswordUser.model.js";
+import { DeleteUser } from "../models/userSubModels/deleteUser.model.js";
 
 const validatePassword = (password) => {
   if (password.length < 6 || password.length > 30) {
@@ -496,12 +497,12 @@ export const verifyDeleteCurrentUser = asyncHandler(async (req, res) => {
   if (!otp) throw new ApiError(400, "OTP is required.");
 
   const deleteUser = await DeleteUser.findOne({ userId });
-  if (!deleteUser) throw new ApiError(400, "Invalid OTP.");
+  if (!deleteUser) throw new ApiError(400, "Invalid or expired OTP");
 
   if (deleteUser.otp !== hashToken(otp))
-    throw new ApiError(400, "Invalid OTP.");
+    throw new ApiError(400, "Invalid or expired OTP");
 
-  const user = await User.findByIdAndDelete(deleteUser.userId);
+  const user = await User.findByIdAndDelete(deleteUser._id);
   await DeleteUser.deleteOne({ userId });
 
   return res

@@ -35,26 +35,25 @@ export const updateCurrentUser = asyncHandler(async (req, res) => {
   const { firstName, lastName, username, channelDescription, country } =
     req.body;
 
-  if (!firstName && !lastName && !username && !channelDescription && !country) {
+  const updateFields = {};
+  if (firstName) updateFields.firstName = firstName;
+  if (lastName) updateFields.lastName = lastName;
+  if (username) updateFields.username = username;
+  if (channelDescription) updateFields.channelDescription = channelDescription;
+  if (country) updateFields.country = country;
+
+  if (Object.keys(updateFields).length === 0) {
     throw new ApiError(400, "At least one field is required.");
   }
 
   const existingUser = await User.findOne({ username });
-  if (existingUser && existingUser._id !== req.user._id) {
+  if (existingUser && !existingUser._id.equals(req.user._id)) {
     throw new ApiError(400, "Username already exists.");
   }
 
-  const user = await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      firstName,
-      lastName,
-      username,
-      channelDescription,
-      country,
-    },
-    { new: true },
-  );
+  const user = await User.findByIdAndUpdate(req.user._id, updateFields, {
+    new: true,
+  });
 
   return res
     .status(200)
@@ -116,5 +115,5 @@ export const updateCurrentBanner = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, "Avatar updated successfully.", user));
+    .json(new ApiResponse(200, "Banner updated successfully.", user));
 });
