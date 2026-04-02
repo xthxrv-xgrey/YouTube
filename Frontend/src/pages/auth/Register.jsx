@@ -36,6 +36,8 @@ const Register = () => {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
+  const setAuth = useAuthStore((s) => s.setAuth);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -61,10 +63,12 @@ const Register = () => {
   const handleVerifyOtp = async (otp) => {
     setVerifying(true);
     try {
-      await axios.post("/api/v1/auth/verify-user", {
+      const res = await axios.post("/api/v1/auth/verify-user", {
         email: formData.email,
         otp,
       });
+      const { safeUser, accessToken } = res.data.data;
+      setAuth(safeUser, accessToken);
       setShowOtpModal(false);
       toast.success("Account verified! Welcome 🎉", {
         duration: 2000,
