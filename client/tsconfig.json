@@ -1,7 +1,9 @@
 {
+  // This file doesn't configure anything itself — it just tells TS
+  // "there are two separate TS projects here, go check both"
   "files": [],
   "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
+    { "path": "./tsconfig.app.json" }, // config for your actual React app code (src/)
+    { "path": "./tsconfig.node.json" } // config for vite.config.ts itself (runs in Node, not the browser)
   ]
 }
