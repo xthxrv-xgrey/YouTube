@@ -1,5 +1,13 @@
 import app from "./src/app.js";
+import connectDatabase from "#config/db.js";
+import env from "#config/env.js";
 
-app.listen(3000, () => {
-    console.log("Server is running on port 3000");
-});
+const startServer = async (): Promise<void> => {
+  await connectDatabase();
+
+  app.listen(env.PORT, () => {
+    console.log(`🚀 Server running on port ${env.PORT}`);
+  });
+};
+
+startServer();

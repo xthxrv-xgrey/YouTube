@@ -14,7 +14,9 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "express": "^5.2.1"
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mongoose": "^9.9.4"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
@@ -24,8 +26,9 @@
     "typescript": "^7.0.2"
   },
   "imports": {
-    "#features/*": "./src/features/*",
-    "#shared/*": "./src/shared/*"
+    "#config/*": "./src/config/*",
+    "#core/*": "./src/core/*",
+    "#features/*": "./src/features/*"
   },
   "declaration": true
 }
