@@ -1,11 +1,12 @@
 class ApiError extends Error {
-  statusCode: number;
-  success: boolean;
-  errors?: unknown[];
+  public readonly statusCode: number;
+  public readonly success: false;
+  public readonly errors: unknown[];
 
   constructor(statusCode: number, message: string, errors: unknown[] = []) {
     super(message);
 
+    this.name = "ApiError";
     this.statusCode = statusCode;
     this.success = false;
     this.errors = errors;

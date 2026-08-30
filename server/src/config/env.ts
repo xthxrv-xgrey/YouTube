@@ -1,8 +1,19 @@
 import dotenv from "dotenv";
+import type { StringValue } from "ms";
 
 dotenv.config();
 
-const requiredEnvFields = ["PORT", "MONGODB_URI"] as const;
+const requiredEnvFields = [
+  "PORT",
+  "MONGODB_URI",
+  "ACCESS_TOKEN_SECRET",
+  "ACCESS_TOKEN_EXPIRY",
+  "REFRESH_TOKEN_SECRET",
+  "REFRESH_TOKEN_EXPIRY",
+  "VERIFICATION_TOKEN_SECRET",
+  "VERIFICATION_TOKEN_EXPIRY",
+  "DEFAULT_AVATAR",
+] as const;
 
 const missingFields = requiredEnvFields.filter((field) => !process.env[field]);
 
@@ -21,7 +32,22 @@ if (Number.isNaN(port) || port <= 0) {
   process.exit(1);
 }
 
-export default {
+const env = {
   PORT: port,
+
   MONGODB_URI: process.env.MONGODB_URI!,
+
+  ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET!,
+  ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY! as StringValue,
+
+  REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET!,
+  REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY! as StringValue,
+
+  VERIFICATION_TOKEN_SECRET: process.env.VERIFICATION_TOKEN_SECRET!,
+  VERIFICATION_TOKEN_EXPIRY: process.env
+    .VERIFICATION_TOKEN_EXPIRY! as StringValue,
+
+  DEFAULT_AVATAR: process.env.DEFAULT_AVATAR!,
 } as const;
+
+export default env;
