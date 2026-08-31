@@ -5,11 +5,11 @@ import ApiError from "#core/errors/ApiError.js";
 import { UserModel } from "#features/user/user.model.js";
 import { compareOTP } from "#utils/otp.utils.js";
 import { PasswordResetModel } from "../models/password-reset.model.js";
+import { SessionModel } from "../models/session.model.js";
 import { ResetPasswordInput } from "../types/auth.types.js";
 import { VerificationTokenPayload } from "../types/token-payload.types.js";
 import { createSessionAndTokens } from "../utils/auth.utils.js";
 import { hashPassword } from "../utils/password.utils.js";
-import { logoutAllDevicesService } from "./logout.service.js";
 import { sendPasswordResetSuccess } from "#integrations/email/email.service.js";
 
 /**
@@ -44,7 +44,6 @@ export const resetPasswordService = async ({
     );
   }
 
-  console.log(payload.purpose);
 
   if (payload.purpose !== "password_reset") {
     throw new ApiError(400, "Invalid verification session.");
@@ -89,7 +88,9 @@ export const resetPasswordService = async ({
 
   // Revoke every existing session before issuing a new one, so a
   // stolen session can't survive a password reset.
-  await logoutAllDevicesService({ userId: user._id.toString() });
+  // Uses deleteMany directly instead of logoutAllDevicesService to
+  // avoid throwing when there are zero existing sessions.
+  await SessionModel.deleteMany({ userId: user._id });
 
   const { accessToken, refreshToken } = await createSessionAndTokens(
     user._id.toString(),

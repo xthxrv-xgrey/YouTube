@@ -43,7 +43,7 @@ export const loginService = async (data: LoginInput) => {
 
   const { device, browser } = parseUserAgent(userAgent);
 
-  await sendNewLoginEmail(user.email, user.firstName, device, browser, ip);
+  await sendNewLoginEmail(user.email, user.firstName, device, browser, ip ?? "Unknown");
 
   return {
     user: safeUser,

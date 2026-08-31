@@ -24,7 +24,6 @@ export const forgotPasswordService = async (identifier: string) => {
     userId: user._id,
   });
 
-  console.log(pendingPasswordResetReqest);
   if (pendingPasswordResetReqest)
     throw new ApiError(
       400,
