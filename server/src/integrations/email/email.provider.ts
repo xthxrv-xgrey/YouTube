@@ -1,21 +1,19 @@
-import env from "#config/env.js";
-import { Resend } from "resend";
+import { ResendEmailProvider } from "./providers/resend.provider.js";
 
-const resend = new Resend(env.RESEND_API_KEY);
-
-export const sendEmail = async ({
-  to,
-  subject,
-  html,
-}: {
+export type SendEmailOptions = {
   to: string;
   subject: string;
   html: string;
-}) => {
-  return resend.emails.send({
-    from: "onboarding@resend.dev",
-    to,
-    subject,
-    html,
-  });
 };
+
+export interface EmailProvider {
+  sendEmail(options: SendEmailOptions): Promise<void>;
+}
+
+/**
+ * Current email provider.
+ *
+ * Resend is used during development.
+ * This can be replaced with another provider later.
+ */
+export const emailProvider: EmailProvider = new ResendEmailProvider();

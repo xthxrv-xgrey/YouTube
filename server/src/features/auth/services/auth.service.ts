@@ -16,7 +16,7 @@ import {
   hashOTP,
   compareOTP,
   sendEmailVerificationOTP,
-} from "#utils/opt.utils.js";
+} from "#utils/otp.utils.js";
 import {
   comparePassword,
   hashPassword,

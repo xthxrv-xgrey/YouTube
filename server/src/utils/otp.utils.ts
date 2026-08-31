@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 
-import { sendEmail } from "#integrations/email/email.provider.js";
+import { emailProvider } from "#integrations/email/email.provider.js";
 import { emailVerificationHtml } from "#integrations/email/templates/index.js";
 
 const SALT_ROUNDS = 12;
@@ -38,14 +38,14 @@ export const sendEmailVerificationOTP = async (
   otp: string
 ): Promise<boolean> => {
   try {
-    await sendEmail({
+    await emailProvider.sendEmail({
       to: email,
       subject: "Email Verification OTP",
       html: emailVerificationHtml(otp),
     });
 
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 };
