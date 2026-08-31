@@ -1,16 +1,5 @@
 import { Router } from "express";
 import {
-  changePassword,
-  forgotPassword,
-  login,
-  logout,
-  logoutAllDevices,
-  refresh,
-  register,
-  resetPassword,
-  verifyEmail,
-} from "#features/auth/controllers/auth.controller.js";
-import {
   validateRegister,
   validateEmailVerification,
   validateLogin,
@@ -20,6 +9,14 @@ import {
   validateRefresh,
 } from "#features/auth/validators/auth.validator.js";
 import { authMiddleware } from "#core/middlewares/auth.middleware.js";
+import { register } from "./controllers/register.controller.js";
+import { verifyEmail } from "./controllers/verify.controller.js";
+import { login } from "./controllers/login.controller.js";
+import { logout, logoutAllDevices } from "./controllers/logout.controller.js";
+import { refresh } from "./controllers/refresh.controller.js";
+import { changePassword } from "./controllers/change-password.controller.js";
+import { forgotPassword } from "./controllers/forgot-password.controller.js";
+import { resetPassword } from "./controllers/reset-password.controller.js";
 
 const router = Router();
 

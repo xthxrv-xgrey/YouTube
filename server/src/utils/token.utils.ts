@@ -45,9 +45,9 @@ export const generateRefreshToken = (
 /**
  * Generates a token used to verify a user's email address.
  */
-export const generateVerificationToken = (pendingUserId: string): string => {
+export const generateVerificationToken = (tokenId: string): string => {
   const payload: VerificationTokenPayload = {
-    pendingUserId,
+    tokenId,
     purpose: "email_verification",
   };
 
