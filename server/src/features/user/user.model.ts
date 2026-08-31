@@ -1,8 +1,21 @@
 import env from "#config/env.js";
-import mongoose from "mongoose";
+import mongoose, { HydratedDocument } from "mongoose";
 import { EMAIL_REGEX, USERNAME_REGEX, NAME_REGEX } from "#constants/regex.js";
 
-const userSchema = new mongoose.Schema(
+export interface IUser {
+  firstName: string;
+  lastName?: string;
+  username: string;
+  email: string;
+  avatar: string;
+  password: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type UserDocument = HydratedDocument<IUser>;
+
+const userSchema = new mongoose.Schema<IUser>(
   {
     firstName: {
       type: String,
@@ -60,4 +73,4 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-export const UserModel = mongoose.model("User", userSchema);
+export const UserModel = mongoose.model<IUser>("User", userSchema);

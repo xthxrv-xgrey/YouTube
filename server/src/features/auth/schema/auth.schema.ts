@@ -46,3 +46,55 @@ export const verifyEmailInputSchema = z.object({
 
   verificationToken: z.string().min(1, "Verification token is required"),
 });
+
+export const loginSchema = z.object({
+  identifier: z
+    .string()
+    .trim()
+    .min(1, "Email or username is required")
+    .refine(
+      (value) =>
+        z.string().email().safeParse(value).success ||
+        USERNAME_REGEX.test(value),
+      {
+        message: "Enter a valid email or username",
+      }
+    ),
+
+  password: z
+    .string()
+    .min(1, "Password is required")
+    .min(8, "Password must be at least 8 characters"),
+});
+
+export const loginInputSchema = z.object({
+  identifier: z
+    .string()
+    .trim()
+    .min(1, "Email or username is required")
+    .refine(
+      (value) =>
+        z.string().email().safeParse(value).success ||
+        USERNAME_REGEX.test(value),
+      {
+        message: "Enter a valid email or username",
+      }
+    ),
+
+  password: z
+    .string()
+    .min(1, "Password is required")
+    .min(8, "Password must be at least 8 characters"),
+
+  ip: z.string().optional(),
+
+  userAgent: z.string().optional(),
+});
+
+export const logoutInputSchema = z.object({
+  sessionId: z.string().min(1, "SessionId is required."),
+});
+
+export const logoutAllDevicesInputSchema = z.object({
+  userId: z.string().min(1, "UserId is required."),
+});

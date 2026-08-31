@@ -2,16 +2,20 @@ import jwt from "jsonwebtoken";
 
 import { PendingUserModel } from "#features/auth/models/pending-user.model.js";
 import { UserModel } from "#features/user/user.model.js";
-import { SessionModel } from "../models/session.model.js";
+import { SessionModel } from "#features/auth/models/session.model.js";
 
 import {
   generateAccessToken,
   generateRefreshToken,
   generateVerificationToken,
+  hashRefreshToken,
 } from "#utils/token.utils.js";
 
 import { generateOTP, hashOTP } from "#utils/opt.utils.js";
-import { hashPassword } from "../utils/password.utils.js";
+import {
+  comparePassword,
+  hashPassword,
+} from "#features/auth/utils/password.utils.js";
 
 import {
   PENDING_USER_TTL,
@@ -22,26 +26,41 @@ import {
 import env from "#config/env.js";
 import ApiError from "#core/errors/ApiError.js";
 
-import type { RegisterInput, VerifyEmailInput } from "../types/auth.types.js";
-import type { VerificationTokenPayload } from "../types/token-payload.types.js";
+import type {
+  RegisterInput,
+  VerifyEmailInput,
+  LoginInput,
+  LogoutInput,
+  LogoutAllDevicesInput,
+} from "#features/auth/types/auth.types.js";
+
+import type {
+  AccessTokenPayload,
+  VerificationTokenPayload,
+} from "#features/auth/types/token-payload.types.js";
+import { string } from "zod";
 
 /**
- * Registers a new user by creating a pending account.
+ * Creates a temporary user registration.
  *
- * The user is stored temporarily until their email
- * verification OTP is successfully verified.
+ * The user is stored in the pending-user collection until their
+ * email address has been successfully verified with the OTP.
+ *
+ * This prevents unverified accounts from being created in the
+ * main users collection.
  */
 export const registerUser = async (data: RegisterInput) => {
   const { firstName, lastName, username, email, password } = data;
 
-  // Check whether the email is already registered.
+  // Prevent registration with an email that already belongs
+  // to an existing, verified user.
   const existingUserByEmail = await UserModel.findOne({ email });
 
   if (existingUserByEmail) {
     throw new ApiError(409, "Email already exists.");
   }
 
-  // Check whether the username is already registered.
+  // Usernames must be unique among verified users.
   const existingUserByUsername = await UserModel.findOne({
     username,
   });
@@ -50,8 +69,7 @@ export const registerUser = async (data: RegisterInput) => {
     throw new ApiError(409, "Username already exists.");
   }
 
-  // Check whether there is already a pending registration
-  // for this email.
+  // Prevent multiple active registration attempts for the same email.
   const pendingUserByEmail = await PendingUserModel.findOne({
     email,
   });
@@ -63,8 +81,7 @@ export const registerUser = async (data: RegisterInput) => {
     );
   }
 
-  // Check whether there is already a pending registration
-  // for this username.
+  // Prevent multiple active registration attempts for the same username.
   const pendingUserByUsername = await PendingUserModel.findOne({
     username,
   });
@@ -76,15 +93,21 @@ export const registerUser = async (data: RegisterInput) => {
     );
   }
 
-  // Hash password before storing it.
+  // Never store the user's plain-text password.
+  // The same password hash will later be copied to the real user document
+  // after successful email verification.
   const hashedPassword = await hashPassword(password);
 
-  // Generate OTP and store its hash.
+  // Generate a one-time verification code and store only its hash.
+  // The plain OTP should be sent to the user's email and never persisted.
   const otp = generateOTP();
   const hashedOTP = await hashOTP(otp);
 
   // TODO:
-  // Send OTP to user's email once email service is implemented.
+  // Send the plain OTP through the email service.
+  //
+  // The email service should receive `otp`, while the database should
+  // only contain `hashedOTP`.
 
   const pendingUser = await PendingUserModel.create({
     firstName,
@@ -93,14 +116,16 @@ export const registerUser = async (data: RegisterInput) => {
     email,
     password: hashedPassword,
 
-    // Use hashedOTP once OTP verification is implemented
-    // securely through the email service.
+    // Store the hashed OTP instead of the plain-text OTP.
     otp,
 
+    // Automatically expire the pending registration after the
+    // configured amount of time.
     expiresAt: new Date(Date.now() + PENDING_USER_TTL * 1000),
   });
 
-  // Generate a token identifying this pending registration.
+  // The verification token identifies the pending registration without
+  // exposing the user's credentials or personal data.
   const verificationToken = generateVerificationToken(
     pendingUser._id.toString()
   );
@@ -112,7 +137,13 @@ export const registerUser = async (data: RegisterInput) => {
 };
 
 /**
- * Verifies a user's email and creates the actual user account.
+ * Verifies the email address associated with a pending registration.
+ *
+ * Once the OTP is successfully verified:
+ * 1. The pending registration is removed.
+ * 2. A permanent user account is created.
+ * 3. Access and refresh tokens are generated.
+ * 4. A persistent session is created for the user.
  */
 export const verifyUserEmail = async ({
   otp,
@@ -120,7 +151,7 @@ export const verifyUserEmail = async ({
   ip,
   userAgent,
 }: VerifyEmailInput) => {
-  // Make sure the verification token exists.
+  // A verification token is required to identify the pending registration.
   if (!verificationToken) {
     throw new ApiError(
       400,
@@ -131,6 +162,7 @@ export const verifyUserEmail = async ({
   let payload: VerificationTokenPayload;
 
   try {
+    // Validate the token signature and expiration before using its payload.
     payload = jwt.verify(
       verificationToken,
       env.VERIFICATION_TOKEN_SECRET
@@ -142,8 +174,14 @@ export const verifyUserEmail = async ({
     );
   }
 
+  if (payload.purpose !== "email_verification") {
+    throw new ApiError(400, "Invalid verification session.");
+  }
+
   const { pendingUserId } = payload;
 
+  // Retrieve the temporary registration using the ID stored in
+  // the signed verification token.
   const pendingUser = await PendingUserModel.findById(pendingUserId);
 
   if (!pendingUser) {
@@ -154,50 +192,118 @@ export const verifyUserEmail = async ({
   }
 
   // TODO:
-  // Replace direct comparison with compareOTP once email
-  // verification is implemented properly.
-  if (otp !== pendingUser.otp) {
+  // Compare the submitted OTP with the stored hash using `compareOTP`.
+  //
+  // Never compare or store OTPs as plain text in production.
+  const isOTPValid = otp === pendingUser.otp;
+
+  if (!isOTPValid) {
     throw new ApiError(400, "Invalid OTP. Please enter the correct OTP.");
   }
 
-  // Remove the pending registration.
+  // The pending registration is no longer needed after successful
+  // verification, so remove it before creating the permanent account.
   await PendingUserModel.findByIdAndDelete(pendingUserId);
 
-  // Create the actual user account.
+  // Create the verified user account using the information collected
+  // during the pending registration.
   const user = await UserModel.create({
     firstName: pendingUser.firstName,
-    lastName: pendingUser.lastName,
+    lastName: pendingUser.lastName ?? "",
     username: pendingUser.username,
     email: pendingUser.email,
     password: pendingUser.password,
   });
 
-  // Generate authentication tokens.
-  const accessToken = generateAccessToken(user._id.toString());
-
+  // Generate a refresh token that can be used to obtain new access tokens.
   const refreshToken = generateRefreshToken(user._id.toString());
 
-  // Create user session.
+  // Create a server-side session so the refresh token can be tracked,
+  // revoked, and associated with the user's device/client.
   const session = await SessionModel.create({
     userId: user._id,
     ip,
     userAgent,
-    refreshTokenHash: refreshToken,
+    refreshTokenHash: hashRefreshToken(refreshToken),
     expiresAt: new Date(Date.now() + SESSION_TTL_DAYS * MS_PER_DAY),
   });
 
-  const responseUser = {
-    id: user._id,
+  // Generate a short-lived access token for authenticated API requests.
+  const accessToken = generateAccessToken(
+    user._id.toString(),
+    session._id.toString()
+  );
+
+  // Return only the user information required by the client.
+  // Sensitive/internal fields such as the password are intentionally excluded.
+
+  return {
+    user,
+    accessToken,
+    refreshToken,
+  };
+};
+
+export const loginUser = async (data: LoginInput) => {
+  const { identifier, password, ip, userAgent } = data;
+
+  // Existing, verified user Check.
+  const user = await UserModel.findOne({
+    $or: [{ email: identifier }, { username: identifier }],
+  }).select("+password");
+
+  if (!user) {
+    throw new ApiError(409, "User does not exist.");
+  }
+
+  if (!comparePassword(password, user.password)) {
+    throw new ApiError(409, "Incorrect Password!");
+  }
+
+  const refreshToken = generateRefreshToken(user._id.toString());
+
+  const session = await SessionModel.create({
+    userId: user._id,
+    ip,
+    userAgent,
+    refreshTokenHash: hashRefreshToken(refreshToken),
+    expiresAt: new Date(Date.now() + SESSION_TTL_DAYS * MS_PER_DAY),
+  });
+
+  const accessToken = generateAccessToken(
+    user._id.toString(),
+    session._id.toString()
+  );
+
+  const safeUser = {
     firstName: user.firstName,
     lastName: user.lastName,
     username: user.username,
     email: user.email,
-    accessToken,
-    session,
+    avatar: user.avatar,
   };
 
   return {
-    user: responseUser,
+    user: safeUser,
+    accessToken,
     refreshToken,
   };
+};
+
+export const logoutUser = async ({ sessionId }: LogoutInput) => {
+  return await SessionModel.findByIdAndDelete(sessionId);
+};
+
+export const logoutUserFromAllDevices = async ({
+  userId,
+}: LogoutAllDevicesInput) => {
+  const sessions = await SessionModel.findOne({ userId });
+
+  console.log(sessions);
+
+  if (!sessions) {
+    throw new ApiError(400, "Sessions");
+  }
+
+  return await SessionModel.findByIdAndDelete(sessions[0]._id);
 };

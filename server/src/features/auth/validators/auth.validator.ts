@@ -2,7 +2,8 @@ import type { Request, Response, NextFunction } from "express";
 import {
   registerSchema,
   emailVerificationSchema,
-} from "../schema/auth.schema.js";
+  loginSchema,
+} from "#features/auth/schema/auth.schema.js";
 
 export const validateRegister = (
   req: Request,
@@ -52,5 +53,24 @@ export const validateEmailVerification = (
 
   req.body = result.data;
 
+  next();
+};
+
+export const validateLogin = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const result = loginSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors: result.error.issues,
+    });
+  }
+
+  req.body = result.data;
   next();
 };
