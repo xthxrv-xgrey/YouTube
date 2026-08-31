@@ -1,4 +1,4 @@
-export const emailVerificationHtml = (otp: string): string => {
+export const passwordResetOtpHtml = (otp: string): string => {
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -6,7 +6,7 @@ export const emailVerificationHtml = (otp: string): string => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-        <title>Verify your email</title>
+        <title>Reset your password</title>
       </head>
 
       <body
@@ -28,12 +28,12 @@ export const emailVerificationHtml = (otp: string): string => {
           "
         >
           <h1 style="margin-top: 0;">
-            Verify your email
+            Reset your password
           </h1>
 
           <p>
-            Thanks for signing up. Use the verification code below
-            to verify your email address.
+            We received a request to reset your password.
+            Use the verification code below to continue.
           </p>
 
           <div
@@ -57,8 +57,12 @@ export const emailVerificationHtml = (otp: string): string => {
           </div>
 
           <p>
-            This code will expire shortly. If you didn't request this
-            verification code, you can safely ignore this email.
+            This code will expire shortly. If you didn't request a
+            password reset, you can safely ignore this email.
+          </p>
+
+          <p style="color: #71717a; font-size: 14px;">
+            For your security, never share this code with anyone.
           </p>
 
           <p style="color: #71717a; font-size: 14px;">
@@ -69,4 +73,3 @@ export const emailVerificationHtml = (otp: string): string => {
     </html>
   `;
 };
-

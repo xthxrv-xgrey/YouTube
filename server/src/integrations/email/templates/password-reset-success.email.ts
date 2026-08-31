@@ -1,4 +1,4 @@
-export const passwordResetHtml = (otp: string): string => {
+export const passwordResetSuccessHtml = (name: string): string => {
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -6,7 +6,7 @@ export const passwordResetHtml = (otp: string): string => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-        <title>Reset your password</title>
+        <title>Password reset successfully</title>
       </head>
 
       <body
@@ -28,12 +28,15 @@ export const passwordResetHtml = (otp: string): string => {
           "
         >
           <h1 style="margin-top: 0;">
-            Reset your password
+            Password reset successfully
           </h1>
 
           <p>
-            We received a request to reset your password.
-            Use the verification code below to continue.
+            Hi ${name},
+          </p>
+
+          <p>
+            Your password has been successfully reset.
           </p>
 
           <div
@@ -47,22 +50,21 @@ export const passwordResetHtml = (otp: string): string => {
           >
             <span
               style="
-                font-size: 32px;
+                font-size: 20px;
                 font-weight: bold;
-                letter-spacing: 8px;
               "
             >
-              ${otp}
+              Your account is secure again.
             </span>
           </div>
 
           <p>
-            This code will expire shortly. If you didn't request a
-            password reset, you can safely ignore this email.
+            You can now sign in using your new password.
           </p>
 
           <p style="color: #71717a; font-size: 14px;">
-            For your security, never share this code with anyone.
+            If you didn't request this password reset, please secure your
+            account immediately.
           </p>
 
           <p style="color: #71717a; font-size: 14px;">

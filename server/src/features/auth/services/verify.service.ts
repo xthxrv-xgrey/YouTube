@@ -7,6 +7,7 @@ import { compareOTP } from "#utils/otp.utils.js";
 import { UserModel } from "#features/user/user.model.js";
 import { createSessionAndTokens } from "../utils/auth.utils.js";
 import env from "#config/env.js";
+import { sendEmailVerificationSuccess } from "#integrations/email/email.service.js";
 
 /**
  * Verifies a user's email address and starts a session.
@@ -74,6 +75,8 @@ export const verifyEmailService = async ({
     ip,
     userAgent
   );
+
+  await sendEmailVerificationSuccess(user.email, user.firstName);
 
   return {
     user,

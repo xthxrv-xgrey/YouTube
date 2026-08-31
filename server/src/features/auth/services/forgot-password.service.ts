@@ -1,10 +1,7 @@
 import ApiError from "#core/errors/ApiError.js";
 import { UserModel } from "#features/user/user.model.js";
-import {
-  generateOTP,
-  hashOTP,
-  sendPasswordResetOTP,
-} from "#utils/otp.utils.js";
+import { sendPasswordResetOTP } from "#integrations/email/email.service.js";
+import { generateOTP, hashOTP } from "#utils/otp.utils.js";
 import { generateVerificationToken } from "#utils/token.utils.js";
 import { PasswordResetModel } from "../models/password-reset.model.js";
 import { getVerificationExpirty } from "../utils/auth.utils.js";

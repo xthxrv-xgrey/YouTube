@@ -1,5 +1,6 @@
 import ApiError from "#core/errors/ApiError.js";
 import { UserModel } from "#features/user/user.model.js";
+import { sendPasswordChangeSuccess } from "#integrations/email/email.service.js";
 import { ChangePasswordInput } from "../types/auth.types.js";
 import { comparePassword, hashPassword } from "../utils/password.utils.js";
 
@@ -38,4 +39,6 @@ export const changePasswordService = async ({
   user.password = await hashPassword(newPassword);
 
   await user.save();
+
+  await sendPasswordChangeSuccess(user.email, user.firstName);
 };

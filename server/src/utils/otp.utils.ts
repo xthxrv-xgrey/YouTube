@@ -1,12 +1,6 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 
-import { emailProvider } from "#integrations/email/email.provider.js";
-import {
-  emailVerificationHtml,
-  passwordResetHtml,
-} from "#integrations/email/index.js";
-
 const SALT_ROUNDS = 12;
 
 /**
@@ -31,44 +25,4 @@ export const compareOTP = async (
   hashedOTP: string
 ): Promise<boolean> => {
   return bcrypt.compare(otp, hashedOTP);
-};
-
-/**
- * Sends an email verification OTP.
- */
-export const sendEmailVerificationOTP = async (
-  email: string,
-  otp: string
-): Promise<boolean> => {
-  try {
-    await emailProvider.sendEmail({
-      to: email,
-      subject: "Email Verification OTP",
-      html: emailVerificationHtml(otp),
-    });
-
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-/**
- * Sends an email verification OTP.
- */
-export const sendPasswordResetOTP = async (
-  email: string,
-  otp: string
-): Promise<boolean> => {
-  try {
-    await emailProvider.sendEmail({
-      to: email,
-      subject: "Password Reset OTP",
-      html: passwordResetHtml(otp),
-    });
-
-    return true;
-  } catch {
-    return false;
-  }
 };

@@ -1,14 +1,17 @@
 import ApiError from "#core/errors/ApiError.js";
 import { UserModel } from "#features/user/user.model.js";
+import { sendNewLoginEmail } from "#integrations/email/email.service.js";
+
 import { LoginInput } from "../types/auth.types.js";
 import { createSessionAndTokens } from "../utils/auth.utils.js";
 import { comparePassword } from "../utils/password.utils.js";
+import { parseUserAgent } from "../utils/user-agent.utils.js";
 
 /**
  * Authenticates a user and starts a new session.
  */
 export const loginService = async (data: LoginInput) => {
-  const { identifier, password, ip, userAgent } = data;
+  const { identifier, password, ip = "Unknown", userAgent = "Unknown" } = data;
 
   const user = await UserModel.findOne({
     $or: [{ email: identifier }, { username: identifier }],
@@ -37,6 +40,10 @@ export const loginService = async (data: LoginInput) => {
     email: user.email,
     avatar: user.avatar,
   };
+
+  const { device, browser } = parseUserAgent(userAgent);
+
+  await sendNewLoginEmail(user.email, user.firstName, device, browser, ip);
 
   return {
     user: safeUser,

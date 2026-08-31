@@ -10,6 +10,7 @@ import { VerificationTokenPayload } from "../types/token-payload.types.js";
 import { createSessionAndTokens } from "../utils/auth.utils.js";
 import { hashPassword } from "../utils/password.utils.js";
 import { logoutAllDevicesService } from "./logout.service.js";
+import { sendPasswordResetSuccess } from "#integrations/email/email.service.js";
 
 /**
  * Completes a password reset: verifies the OTP, updates the password,
@@ -93,6 +94,8 @@ export const resetPasswordService = async ({
     ip,
     userAgent
   );
+
+  await sendPasswordResetSuccess(user.email, user.firstName);
 
   return { user, accessToken, refreshToken };
 };

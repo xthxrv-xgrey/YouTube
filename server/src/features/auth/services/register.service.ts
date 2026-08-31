@@ -1,10 +1,7 @@
 import ApiError from "#core/errors/ApiError.js";
 import { UserModel } from "#features/user/user.model.js";
-import {
-  generateOTP,
-  hashOTP,
-  sendEmailVerificationOTP,
-} from "#utils/otp.utils.js";
+import { sendEmailVerificationOTP } from "#integrations/email/email.service.js";
+import { generateOTP, hashOTP } from "#utils/otp.utils.js";
 import { generateVerificationToken } from "#utils/token.utils.js";
 import { PendingUserModel } from "../models/pending-user.model.js";
 import { RegisterInput } from "../types/auth.types.js";
