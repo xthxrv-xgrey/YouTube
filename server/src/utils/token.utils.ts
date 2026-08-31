@@ -45,10 +45,13 @@ export const generateRefreshToken = (
 /**
  * Generates a token used to verify a user's email address.
  */
-export const generateVerificationToken = (tokenId: string): string => {
+export const generateVerificationToken = (
+  tokenId: string,
+  purpose: string
+): string => {
   const payload: VerificationTokenPayload = {
     tokenId,
-    purpose: "email_verification",
+    purpose,
   };
 
   return jwt.sign(payload, env.VERIFICATION_TOKEN_SECRET, {

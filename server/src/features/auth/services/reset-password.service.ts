@@ -44,6 +44,8 @@ export const resetPasswordService = async ({
     );
   }
 
+  console.log(payload.purpose);
+
   if (payload.purpose !== "password_reset") {
     throw new ApiError(400, "Invalid verification session.");
   }

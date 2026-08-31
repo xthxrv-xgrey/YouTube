@@ -10,5 +10,5 @@ export type RefreshTokenPayload = {
 
 export type VerificationTokenPayload = {
   tokenId: string;
-  purpose: "email_verification" | "password_reset";
+  purpose: string;
 };

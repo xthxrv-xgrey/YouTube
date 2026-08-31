@@ -63,7 +63,8 @@ export const registerService = async (data: RegisterInput) => {
   });
 
   const verificationToken = generateVerificationToken(
-    pendingUser._id.toString()
+    pendingUser._id.toString(),
+    "email_verification"
   );
 
   return {

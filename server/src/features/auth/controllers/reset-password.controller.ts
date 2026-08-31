@@ -14,6 +14,7 @@ import ApiResponse from "#core/utils/ApiResponse.js";
  * @cookie  Clears `verificationToken`, sets `refreshToken` to start a fresh session
  * @returns 200 { user, accessToken } — all other sessions are revoked server-side
  */
+
 export const resetPassword = asyncHandler(
   async (req: Request, res: Response) => {
     const { user, accessToken, refreshToken } = await resetPasswordService({
@@ -25,6 +26,7 @@ export const resetPassword = asyncHandler(
     });
 
     res.clearCookie("verificationToken", verificationCookieOptions);
+
     res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
     const response = new ApiResponse(

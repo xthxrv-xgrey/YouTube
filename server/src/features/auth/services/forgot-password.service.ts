@@ -20,10 +20,11 @@ export const forgotPasswordService = async (identifier: string) => {
     return { verificationToken: null };
   }
 
-  const pendingPasswordResetReqest = await PasswordResetModel.find({
+  const pendingPasswordResetReqest = await PasswordResetModel.findOne({
     userId: user._id,
   });
 
+  console.log(pendingPasswordResetReqest);
   if (pendingPasswordResetReqest)
     throw new ApiError(
       400,
@@ -47,7 +48,8 @@ export const forgotPasswordService = async (identifier: string) => {
   });
 
   const verificationToken = generateVerificationToken(
-    passwordReset._id.toString()
+    passwordReset._id.toString(),
+    "password_reset"
   );
 
   return { verificationToken };
