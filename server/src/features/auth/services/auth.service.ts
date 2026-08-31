@@ -16,7 +16,9 @@ import {
   hashOTP,
   compareOTP,
   sendEmailVerificationOTP,
+  sendPasswordResetOTP,
 } from "#utils/otp.utils.js";
+
 import {
   comparePassword,
   hashPassword,
@@ -25,9 +27,8 @@ import {
 import {
   createSessionAndTokens,
   getSessionExpiry,
+  getVerificationExpirty,
 } from "#features/auth/utils/auth.utils.js";
-
-import { PENDING_USER_TTL } from "#constants/auth.js";
 
 import env from "#config/env.js";
 import ApiError from "#core/errors/ApiError.js";
@@ -38,6 +39,8 @@ import type {
   LoginInput,
   LogoutInput,
   LogoutAllDevicesInput,
+  ChangePasswordInput,
+  ResetPasswordInput,
 } from "#features/auth/types/auth.types.js";
 
 import type {
@@ -45,29 +48,25 @@ import type {
   VerificationTokenPayload,
 } from "#features/auth/types/token-payload.types.js";
 
+import { PasswordResetModel } from "../models/password-reset.model.js";
+import { OTP_ATTEMPT_LIMIT } from "#constants/auth.js";
+
 /**
- * Registers a new user as a "pending" registration.
- *
- * The user is stored in the pending-user collection until their
- * email address has been verified with an OTP. This keeps
- * unverified accounts out of the main users collection entirely.
+ * Registers a new user as a pending registration.
  */
-export const registerUser = async (data: RegisterInput) => {
+export const registerService = async (data: RegisterInput) => {
   const { firstName, lastName, username, email, password } = data;
 
-  // An email already tied to a verified account can't register again.
   const existingUserByEmail = await UserModel.findOne({ email });
   if (existingUserByEmail) {
     throw new ApiError(409, "Email already exists.");
   }
 
-  // Usernames must be unique among verified users.
   const existingUserByUsername = await UserModel.findOne({ username });
   if (existingUserByUsername) {
     throw new ApiError(409, "Username already exists.");
   }
 
-  // Only one active registration attempt is allowed per email...
   const pendingUserByEmail = await PendingUserModel.findOne({ email });
   if (pendingUserByEmail) {
     throw new ApiError(
@@ -76,7 +75,6 @@ export const registerUser = async (data: RegisterInput) => {
     );
   }
 
-  // ...and per username.
   const pendingUserByUsername = await PendingUserModel.findOne({ username });
   if (pendingUserByUsername) {
     throw new ApiError(
@@ -85,12 +83,8 @@ export const registerUser = async (data: RegisterInput) => {
     );
   }
 
-  // Never persist the plain-text password. The hash is copied over to
-  // the real user document once email verification succeeds.
   const hashedPassword = await hashPassword(password);
 
-  // Generate a one-time verification code. Only the hash is persisted;
-  // the plain OTP is sent to the user's email and discarded immediately.
   const otp = generateOTP();
   const hashedOTP = await hashOTP(otp);
 
@@ -100,7 +94,6 @@ export const registerUser = async (data: RegisterInput) => {
       "Unable to send the verification email. Please try again later."
     );
   }
-  // The database must only ever see `hashedOTP`, never `otp`.
 
   const pendingUser = await PendingUserModel.create({
     firstName,
@@ -108,12 +101,10 @@ export const registerUser = async (data: RegisterInput) => {
     username,
     email,
     password: hashedPassword,
-    otp: hashedOTP,
-    expiresAt: new Date(Date.now() + PENDING_USER_TTL * 1000),
+    otpHash: hashedOTP,
+    expiresAt: getVerificationExpirty(),
   });
 
-  // The verification token identifies the pending registration without
-  // exposing any credentials or personal data.
   const verificationToken = generateVerificationToken(
     pendingUser._id.toString()
   );
@@ -125,14 +116,9 @@ export const registerUser = async (data: RegisterInput) => {
 };
 
 /**
- * Verifies the email address tied to a pending registration.
- *
- * On success:
- * 1. The pending registration is deleted.
- * 2. A permanent user account is created.
- * 3. A session is created and access/refresh tokens are issued.
+ * Verifies a user's email address and starts a session.
  */
-export const verifyUserEmail = async ({
+export const verifyEmailService = async ({
   otp,
   verificationToken,
   ip,
@@ -163,9 +149,10 @@ export const verifyUserEmail = async ({
     throw new ApiError(400, "Invalid verification session.");
   }
 
-  const { pendingUserId } = payload;
+  const { tokenId } = payload;
 
-  const pendingUser = await PendingUserModel.findById(pendingUserId);
+  const pendingUser = await PendingUserModel.findById(tokenId);
+
   if (!pendingUser) {
     throw new ApiError(
       400,
@@ -173,14 +160,13 @@ export const verifyUserEmail = async ({
     );
   }
 
-  // Compare against the stored hash — never compare plaintext OTPs.
-  const isOTPValid = await compareOTP(otp, pendingUser.otp);
+  const isOTPValid = await compareOTP(otp, pendingUser.otpHash);
+
   if (!isOTPValid) {
     throw new ApiError(400, "Invalid OTP. Please enter the correct OTP.");
   }
 
-  // The pending registration is no longer needed once verified.
-  await PendingUserModel.findByIdAndDelete(pendingUserId);
+  await PendingUserModel.findByIdAndDelete(tokenId);
 
   const user = await UserModel.create({
     firstName: pendingUser.firstName,
@@ -196,7 +182,6 @@ export const verifyUserEmail = async ({
     userAgent
   );
 
-  // Sensitive/internal fields (e.g. password) are intentionally excluded.
   return {
     user,
     accessToken,
@@ -205,10 +190,9 @@ export const verifyUserEmail = async ({
 };
 
 /**
- * Authenticates an existing, verified user with an email/username
- * and password, and issues a new session.
+ * Authenticates a user and starts a new session.
  */
-export const loginUser = async (data: LoginInput) => {
+export const loginService = async (data: LoginInput) => {
   const { identifier, password, ip, userAgent } = data;
 
   const user = await UserModel.findOne({
@@ -220,6 +204,7 @@ export const loginUser = async (data: LoginInput) => {
   }
 
   const isPasswordValid = await comparePassword(password, user.password);
+
   if (!isPasswordValid) {
     throw new ApiError(401, "Incorrect password.");
   }
@@ -246,16 +231,16 @@ export const loginUser = async (data: LoginInput) => {
 };
 
 /**
- * Logs a user out of a single device by deleting that device's session.
+ * Logs a user out of the current device/session.
  */
-export const logoutUser = async ({ sessionId }: LogoutInput) => {
+export const logoutService = async ({ sessionId }: LogoutInput) => {
   return await SessionModel.findByIdAndDelete(sessionId);
 };
 
 /**
- * Logs a user out of every device by deleting all of their sessions.
+ * Logs a user out of every device.
  */
-export const logoutUserFromAllDevices = async ({
+export const logoutAllDevicesService = async ({
   userId,
 }: LogoutAllDevicesInput) => {
   const result = await SessionModel.deleteMany({ userId });
@@ -268,16 +253,9 @@ export const logoutUserFromAllDevices = async ({
 };
 
 /**
- * Rotates a refresh token: verifies it, checks it against the hash
- * on file for its session, and issues a fresh access/refresh pair.
- *
- * Reuse detection: a refresh token that verifies correctly but no
- * longer matches its session's stored hash means it was already
- * rotated away earlier — i.e. someone is replaying a stolen token.
- * When that happens, every session for the user is torn down and
- * they're forced to log in again everywhere.
+ * Rotates the refresh token and issues a new access/refresh pair.
  */
-export const refreshTokens = async (oldRefreshToken: string | undefined) => {
+export const refreshService = async (oldRefreshToken: string | undefined) => {
   if (!oldRefreshToken) {
     throw new ApiError(401, "No refresh token provided. Please log in again.");
   }
@@ -295,8 +273,6 @@ export const refreshTokens = async (oldRefreshToken: string | undefined) => {
 
   const { userId, sessionId } = payload;
 
-  // Look up by session ID, not by hash — this is what lets us tell
-  // "session gone" apart from "token replayed" below.
   const session =
     await SessionModel.findById(sessionId).select("+refreshTokenHash");
 
@@ -307,10 +283,8 @@ export const refreshTokens = async (oldRefreshToken: string | undefined) => {
   const incomingTokenHash = hashRefreshToken(oldRefreshToken);
 
   if (incomingTokenHash !== session.refreshTokenHash) {
-    // Valid signature, valid session ID, but the hash is stale —
-    // this exact token was already used and rotated out once
-    // before. Treat it as theft: burn every session for this user.
     await SessionModel.deleteMany({ userId });
+
     throw new ApiError(
       401,
       "Refresh token reuse detected. All sessions have been logged out for your safety. Please log in again."
@@ -322,7 +296,181 @@ export const refreshTokens = async (oldRefreshToken: string | undefined) => {
 
   session.refreshTokenHash = hashRefreshToken(refreshToken);
   session.expiresAt = getSessionExpiry();
+
   await session.save();
 
-  return { accessToken, refreshToken };
+  return {
+    accessToken,
+    refreshToken,
+  };
+};
+
+/**
+ * Changes the authenticated user's password.
+ */
+export const changePasswordService = async ({
+  userId,
+  currentPassword,
+  newPassword,
+}: ChangePasswordInput) => {
+  const user = await UserModel.findById(userId).select("+password");
+
+  if (!user) {
+    throw new ApiError(404, "User not found.");
+  }
+
+  const isCurrentPasswordValid = await comparePassword(
+    currentPassword,
+    user.password
+  );
+
+  if (!isCurrentPasswordValid) {
+    throw new ApiError(401, "Current password is incorrect.");
+  }
+
+  const isSamePassword = await comparePassword(newPassword, user.password);
+
+  if (isSamePassword) {
+    throw new ApiError(
+      400,
+      "New password must be different from your current password."
+    );
+  }
+
+  user.password = await hashPassword(newPassword);
+
+  await user.save();
+};
+
+/**
+ * Initiates a password reset. Returns a null token when no account
+ * matches the identifier so the controller can avoid leaking account
+ * existence via the cookie.
+ */
+export const forgotPasswordService = async (identifier: string) => {
+  const user = await UserModel.findOne({
+    $or: [{ email: identifier }, { username: identifier }],
+  });
+
+  if (!user) {
+    return { verificationToken: null };
+  }
+
+  const pendingPasswordResetReqest = await PasswordResetModel.find({
+    userId: user._id,
+  });
+
+  if (pendingPasswordResetReqest)
+    throw new ApiError(
+      400,
+      "Password Request pending please try after few mins"
+    );
+
+  const otp = generateOTP();
+  const hashedOTP = await hashOTP(otp);
+
+  if (!(await sendPasswordResetOTP(user.email, otp))) {
+    throw new ApiError(
+      400,
+      "Unable to send the verification email. Please try again later."
+    );
+  }
+
+  const passwordReset = await PasswordResetModel.create({
+    userId: user._id,
+    otpHash: hashedOTP,
+    expiresAt: getVerificationExpirty(),
+  });
+
+  const verificationToken = generateVerificationToken(
+    passwordReset._id.toString()
+  );
+
+  return { verificationToken };
+};
+
+/**
+ * Completes a password reset: verifies the OTP, updates the password,
+ * revokes all existing sessions, and starts a fresh session.
+ */
+export const resetPasswordService = async ({
+  verificationToken,
+  otp,
+  newPassword,
+  ip,
+  userAgent,
+}: ResetPasswordInput) => {
+  if (!verificationToken) {
+    throw new ApiError(
+      400,
+      "Password reset session not found. Please request a new reset."
+    );
+  }
+
+  let payload: VerificationTokenPayload;
+
+  try {
+    payload = jwt.verify(
+      verificationToken,
+      env.VERIFICATION_TOKEN_SECRET
+    ) as VerificationTokenPayload;
+  } catch {
+    throw new ApiError(
+      400,
+      "Your verification token has expired. Please request a new password reset."
+    );
+  }
+
+  if (payload.purpose !== "password_reset") {
+    throw new ApiError(400, "Invalid verification session.");
+  }
+
+  const { tokenId } = payload;
+  const passwordReset = await PasswordResetModel.findById(tokenId);
+
+  if (!passwordReset) {
+    throw new ApiError(400, "Password reset session expired.");
+  }
+
+  if (passwordReset.attempts >= OTP_ATTEMPT_LIMIT) {
+    throw new ApiError(429, "Password reset attempt limit reached.");
+  }
+
+  const isOTPValid = await compareOTP(otp, passwordReset.otpHash);
+
+  if (!isOTPValid) {
+    await PasswordResetModel.findByIdAndUpdate(passwordReset._id, {
+      attempts: passwordReset.attempts + 1,
+    });
+    throw new ApiError(400, "Invalid OTP.");
+  }
+
+  const hashedNewPassword = await hashPassword(newPassword);
+
+  // Bug fix: must update by passwordReset.userId, not passwordReset._id
+  // (the reset document's own ID) — otherwise this updates the wrong
+  // document (or nothing) and the user's password never actually changes.
+  const user = await UserModel.findByIdAndUpdate(
+    passwordReset.userId,
+    { password: hashedNewPassword },
+    { new: true }
+  );
+
+  if (!user) {
+    throw new ApiError(404, "User not found.");
+  }
+
+  await PasswordResetModel.findByIdAndDelete(passwordReset._id);
+
+  // Revoke every existing session before issuing a new one, so a
+  // stolen session can't survive a password reset.
+  await logoutAllDevicesService({ userId: user._id.toString() });
+
+  const { accessToken, refreshToken } = await createSessionAndTokens(
+    user._id.toString(),
+    ip,
+    userAgent
+  );
+
+  return { user, accessToken, refreshToken };
 };

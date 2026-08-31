@@ -85,3 +85,50 @@ export const logoutInputSchema = z.object({
 export const logoutAllDevicesInputSchema = z.object({
   userId: z.string().min(1, "userId is required."),
 });
+
+export const changePasswordSchema = z.object({
+  userId: z.string().min(1, "userId is required."),
+  currentPassword: z
+    .string()
+    .min(1, "Password is required")
+    .min(8, "Password must be at least 8 characters"),
+  newPassword: z
+    .string()
+    .min(1, "Password is required")
+    .min(8, "Password must be at least 8 characters"),
+});
+
+export const changePasswordInputSchema = z.object({
+  userId: z.string().min(1, "userId is required."),
+  currentPassword: z
+    .string()
+    .min(1, "Password is required")
+    .min(8, "Password must be at least 8 characters"),
+  newPassword: z
+    .string()
+    .min(1, "Password is required")
+    .min(8, "Password must be at least 8 characters"),
+});
+
+export const forgotPasswordSchema = identifierSchema;
+
+export const resetPasswordInputSchema = z.object({
+  verificationToken: z.string().optional(),
+  otp: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "OTP must contain exactly 6 digits"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+  ip: z.string().optional(),
+  userAgent: z.string().optional(),
+});
+
+export const resetPasswordSchema = z.object({
+  otp: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "OTP must contain exactly 6 digits"),
+  ip: z.string().optional(),
+  userAgent: z.string().optional(),
+  verificationToken: z.string().min(1, "Verification token is required"),
+});

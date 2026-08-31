@@ -9,6 +9,6 @@ export type RefreshTokenPayload = {
 };
 
 export type VerificationTokenPayload = {
-  pendingUserId: string;
-  purpose: "email_verification";
+  tokenId: string;
+  purpose: "email_verification" | "password_reset";
 };

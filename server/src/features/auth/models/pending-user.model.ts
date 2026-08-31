@@ -53,7 +53,7 @@ const pendingUserSchema = new mongoose.Schema(
     },
 
     // Stores a bcrypt hash of the OTP — never the plaintext code.
-    otp: {
+    otpHash: {
       type: String,
       required: true,
     },

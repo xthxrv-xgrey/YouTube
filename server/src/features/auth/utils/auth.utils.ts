@@ -1,4 +1,8 @@
-import { MS_PER_DAY, SESSION_TTL_DAYS } from "#constants/auth.js";
+import {
+  MS_PER_DAY,
+  SESSION_TTL_DAYS,
+  VERIFICATION_TTL,
+} from "#constants/auth.js";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -8,6 +12,9 @@ import { SessionModel } from "#features/auth/models/session.model.js";
 
 export const getSessionExpiry = () =>
   new Date(Date.now() + SESSION_TTL_DAYS * MS_PER_DAY);
+
+export const getVerificationExpirty = () =>
+  new Date(Date.now() + VERIFICATION_TTL * 1000);
 
 /**
  * Creates a session and a matching access/refresh token pair.
