@@ -7,6 +7,16 @@
     "rootDir": ".",
     "outDir": "./dist",
 
+    "paths": {
+      "#core/*": ["./src/core/*"],
+      "#features/*": ["./src/features/*"],
+      "#config/*": ["./src/config/*"],
+      "#constants/*": ["./src/constants/*"],
+      "#integrations/*": ["./src/integrations/*"],
+      "#utils/*": ["./src/utils/*"],
+      "#types/*": ["./src/types/*"]
+    },
+
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -19,6 +29,8 @@
 
     "sourceMap": true
   },
+
   "include": ["server.ts", "src/**/*.ts", "src/**/*.d.ts"],
+
   "exclude": ["node_modules", "dist"]
 }

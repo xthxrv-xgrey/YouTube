@@ -7,6 +7,10 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 
 import { AccessTokenPayload } from "#features/auth/types/token-payload.types.js";
 
+/**
+ * Type guard confirming a decoded JWT payload has the shape
+ * we expect from an access token.
+ */
 const isAccessTokenPayload = (
   payload: string | JwtPayload
 ): payload is AccessTokenPayload => {
@@ -17,6 +21,11 @@ const isAccessTokenPayload = (
   );
 };
 
+/**
+ * Verifies the Bearer access token on incoming requests, then attaches
+ * the resolved `user` and `session` documents to `req` for downstream
+ * handlers.
+ */
 export const authMiddleware = async (
   req: Request,
   _res: Response,
@@ -30,13 +39,11 @@ export const authMiddleware = async (
     }
 
     const token = authHeader.slice(7).trim();
-
     if (!token) {
       throw new ApiError(401, "Unauthorized access. No token provided.");
     }
 
     let decoded: string | JwtPayload;
-
     try {
       decoded = jwt.verify(token, env.ACCESS_TOKEN_SECRET);
     } catch {
@@ -47,13 +54,14 @@ export const authMiddleware = async (
       throw new ApiError(401, "Invalid access token payload.");
     }
 
-    const user = await UserModel.findById(decoded.userId);
+    const [user, session] = await Promise.all([
+      UserModel.findById(decoded.userId),
+      SessionModel.findById(decoded.sessionId),
+    ]);
 
     if (!user) {
       throw new ApiError(404, "User not found.");
     }
-
-    const session = await SessionModel.findById(decoded.sessionId);
 
     if (!session) {
       throw new ApiError(401, "Session not found or expired.");

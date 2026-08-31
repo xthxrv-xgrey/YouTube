@@ -22,6 +22,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.4",
     "ms": "^2.1.3",
+    "resend": "^6.25.0",
     "zod": "^4.5.4"
   },
   "devDependencies": {
@@ -38,12 +39,13 @@
     "typescript": "^7.0.2"
   },
   "imports": {
-    "#config/*": "./src/config/*",
-    "#constants/*": "./src/constants/*",
-    "#core/*": "./src/core/*",
-    "#features/*": "./src/features/*",
-    "#integrations/*": "./src/integrations/*",
-    "#utils/*": "./src/utils/*"
+    "#core/*": "./dist/src/core/*",
+    "#features/*": "./dist/src/features/*",
+    "#config/*": "./dist/src/config/*",
+    "#constants/*": "./dist/src/constants/*",
+    "#integrations/*": "./dist/src/integrations/*",
+    "#utils/*": "./dist/src/utils/*",
+    "#types/*": "./dist/src/types/*"
   },
   "declaration": true
 }

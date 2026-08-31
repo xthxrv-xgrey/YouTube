@@ -11,10 +11,13 @@ import type {
 /**
  * Generates a short-lived access token.
  */
-export const generateAccessToken = (userId: string, sessionId: string): string => {
+export const generateAccessToken = (
+  userId: string,
+  sessionId: string
+): string => {
   const payload: AccessTokenPayload = {
     userId,
-    sessionId
+    sessionId,
   };
 
   return jwt.sign(payload, env.ACCESS_TOKEN_SECRET, {
@@ -25,9 +28,13 @@ export const generateAccessToken = (userId: string, sessionId: string): string =
 /**
  * Generates a long-lived refresh token.
  */
-export const generateRefreshToken = (userId: string): string => {
+export const generateRefreshToken = (
+  userId: string,
+  sessionId: string
+): string => {
   const payload: RefreshTokenPayload = {
     userId,
+    sessionId,
   };
 
   return jwt.sign(payload, env.REFRESH_TOKEN_SECRET, {

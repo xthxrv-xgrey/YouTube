@@ -1,6 +1,11 @@
 import { EMAIL_REGEX, NAME_REGEX, USERNAME_REGEX } from "#constants/regex.js";
 import mongoose from "mongoose";
 
+/**
+ * A registration that hasn't been email-verified yet. Documents here
+ * auto-expire via the TTL index below, so an abandoned signup cleans
+ * itself up without any extra job.
+ */
 const pendingUserSchema = new mongoose.Schema(
   {
     firstName: {
@@ -47,6 +52,7 @@ const pendingUserSchema = new mongoose.Schema(
       required: [true, "Password is required"],
     },
 
+    // Stores a bcrypt hash of the OTP — never the plaintext code.
     otp: {
       type: String,
       required: true,
@@ -62,7 +68,7 @@ const pendingUserSchema = new mongoose.Schema(
   }
 );
 
-// Automatically Deletes the pending user once expiresAt is reached.
+// Automatically deletes the document once `expiresAt` is reached.
 pendingUserSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 export const PendingUserModel = mongoose.model(

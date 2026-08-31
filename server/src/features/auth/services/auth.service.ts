@@ -11,17 +11,23 @@ import {
   hashRefreshToken,
 } from "#utils/token.utils.js";
 
-import { generateOTP, hashOTP } from "#utils/opt.utils.js";
+import {
+  generateOTP,
+  hashOTP,
+  compareOTP,
+  sendEmailVerificationOTP,
+} from "#utils/opt.utils.js";
 import {
   comparePassword,
   hashPassword,
 } from "#features/auth/utils/password.utils.js";
 
 import {
-  PENDING_USER_TTL,
-  SESSION_TTL_DAYS,
-  MS_PER_DAY,
-} from "#constants/auth.js";
+  createSessionAndTokens,
+  getSessionExpiry,
+} from "#features/auth/utils/auth.utils.js";
+
+import { PENDING_USER_TTL } from "#constants/auth.js";
 
 import env from "#config/env.js";
 import ApiError from "#core/errors/ApiError.js";
@@ -35,45 +41,34 @@ import type {
 } from "#features/auth/types/auth.types.js";
 
 import type {
-  AccessTokenPayload,
+  RefreshTokenPayload,
   VerificationTokenPayload,
 } from "#features/auth/types/token-payload.types.js";
-import { string } from "zod";
 
 /**
- * Creates a temporary user registration.
+ * Registers a new user as a "pending" registration.
  *
  * The user is stored in the pending-user collection until their
- * email address has been successfully verified with the OTP.
- *
- * This prevents unverified accounts from being created in the
- * main users collection.
+ * email address has been verified with an OTP. This keeps
+ * unverified accounts out of the main users collection entirely.
  */
 export const registerUser = async (data: RegisterInput) => {
   const { firstName, lastName, username, email, password } = data;
 
-  // Prevent registration with an email that already belongs
-  // to an existing, verified user.
+  // An email already tied to a verified account can't register again.
   const existingUserByEmail = await UserModel.findOne({ email });
-
   if (existingUserByEmail) {
     throw new ApiError(409, "Email already exists.");
   }
 
   // Usernames must be unique among verified users.
-  const existingUserByUsername = await UserModel.findOne({
-    username,
-  });
-
+  const existingUserByUsername = await UserModel.findOne({ username });
   if (existingUserByUsername) {
     throw new ApiError(409, "Username already exists.");
   }
 
-  // Prevent multiple active registration attempts for the same email.
-  const pendingUserByEmail = await PendingUserModel.findOne({
-    email,
-  });
-
+  // Only one active registration attempt is allowed per email...
+  const pendingUserByEmail = await PendingUserModel.findOne({ email });
   if (pendingUserByEmail) {
     throw new ApiError(
       409,
@@ -81,11 +76,8 @@ export const registerUser = async (data: RegisterInput) => {
     );
   }
 
-  // Prevent multiple active registration attempts for the same username.
-  const pendingUserByUsername = await PendingUserModel.findOne({
-    username,
-  });
-
+  // ...and per username.
+  const pendingUserByUsername = await PendingUserModel.findOne({ username });
   if (pendingUserByUsername) {
     throw new ApiError(
       409,
@@ -93,21 +85,22 @@ export const registerUser = async (data: RegisterInput) => {
     );
   }
 
-  // Never store the user's plain-text password.
-  // The same password hash will later be copied to the real user document
-  // after successful email verification.
+  // Never persist the plain-text password. The hash is copied over to
+  // the real user document once email verification succeeds.
   const hashedPassword = await hashPassword(password);
 
-  // Generate a one-time verification code and store only its hash.
-  // The plain OTP should be sent to the user's email and never persisted.
+  // Generate a one-time verification code. Only the hash is persisted;
+  // the plain OTP is sent to the user's email and discarded immediately.
   const otp = generateOTP();
   const hashedOTP = await hashOTP(otp);
 
-  // TODO:
-  // Send the plain OTP through the email service.
-  //
-  // The email service should receive `otp`, while the database should
-  // only contain `hashedOTP`.
+  if (!(await sendEmailVerificationOTP(email, otp))) {
+    throw new ApiError(
+      400,
+      "Unable to send the verification email. Please try again later."
+    );
+  }
+  // The database must only ever see `hashedOTP`, never `otp`.
 
   const pendingUser = await PendingUserModel.create({
     firstName,
@@ -115,17 +108,12 @@ export const registerUser = async (data: RegisterInput) => {
     username,
     email,
     password: hashedPassword,
-
-    // Store the hashed OTP instead of the plain-text OTP.
-    otp,
-
-    // Automatically expire the pending registration after the
-    // configured amount of time.
+    otp: hashedOTP,
     expiresAt: new Date(Date.now() + PENDING_USER_TTL * 1000),
   });
 
   // The verification token identifies the pending registration without
-  // exposing the user's credentials or personal data.
+  // exposing any credentials or personal data.
   const verificationToken = generateVerificationToken(
     pendingUser._id.toString()
   );
@@ -137,13 +125,12 @@ export const registerUser = async (data: RegisterInput) => {
 };
 
 /**
- * Verifies the email address associated with a pending registration.
+ * Verifies the email address tied to a pending registration.
  *
- * Once the OTP is successfully verified:
- * 1. The pending registration is removed.
+ * On success:
+ * 1. The pending registration is deleted.
  * 2. A permanent user account is created.
- * 3. Access and refresh tokens are generated.
- * 4. A persistent session is created for the user.
+ * 3. A session is created and access/refresh tokens are issued.
  */
 export const verifyUserEmail = async ({
   otp,
@@ -151,7 +138,6 @@ export const verifyUserEmail = async ({
   ip,
   userAgent,
 }: VerifyEmailInput) => {
-  // A verification token is required to identify the pending registration.
   if (!verificationToken) {
     throw new ApiError(
       400,
@@ -162,7 +148,6 @@ export const verifyUserEmail = async ({
   let payload: VerificationTokenPayload;
 
   try {
-    // Validate the token signature and expiration before using its payload.
     payload = jwt.verify(
       verificationToken,
       env.VERIFICATION_TOKEN_SECRET
@@ -180,10 +165,7 @@ export const verifyUserEmail = async ({
 
   const { pendingUserId } = payload;
 
-  // Retrieve the temporary registration using the ID stored in
-  // the signed verification token.
   const pendingUser = await PendingUserModel.findById(pendingUserId);
-
   if (!pendingUser) {
     throw new ApiError(
       400,
@@ -191,22 +173,15 @@ export const verifyUserEmail = async ({
     );
   }
 
-  // TODO:
-  // Compare the submitted OTP with the stored hash using `compareOTP`.
-  //
-  // Never compare or store OTPs as plain text in production.
-  const isOTPValid = otp === pendingUser.otp;
-
+  // Compare against the stored hash — never compare plaintext OTPs.
+  const isOTPValid = await compareOTP(otp, pendingUser.otp);
   if (!isOTPValid) {
     throw new ApiError(400, "Invalid OTP. Please enter the correct OTP.");
   }
 
-  // The pending registration is no longer needed after successful
-  // verification, so remove it before creating the permanent account.
+  // The pending registration is no longer needed once verified.
   await PendingUserModel.findByIdAndDelete(pendingUserId);
 
-  // Create the verified user account using the information collected
-  // during the pending registration.
   const user = await UserModel.create({
     firstName: pendingUser.firstName,
     lastName: pendingUser.lastName ?? "",
@@ -215,28 +190,13 @@ export const verifyUserEmail = async ({
     password: pendingUser.password,
   });
 
-  // Generate a refresh token that can be used to obtain new access tokens.
-  const refreshToken = generateRefreshToken(user._id.toString());
-
-  // Create a server-side session so the refresh token can be tracked,
-  // revoked, and associated with the user's device/client.
-  const session = await SessionModel.create({
-    userId: user._id,
-    ip,
-    userAgent,
-    refreshTokenHash: hashRefreshToken(refreshToken),
-    expiresAt: new Date(Date.now() + SESSION_TTL_DAYS * MS_PER_DAY),
-  });
-
-  // Generate a short-lived access token for authenticated API requests.
-  const accessToken = generateAccessToken(
+  const { accessToken, refreshToken } = await createSessionAndTokens(
     user._id.toString(),
-    session._id.toString()
+    ip,
+    userAgent
   );
 
-  // Return only the user information required by the client.
-  // Sensitive/internal fields such as the password are intentionally excluded.
-
+  // Sensitive/internal fields (e.g. password) are intentionally excluded.
   return {
     user,
     accessToken,
@@ -244,35 +204,30 @@ export const verifyUserEmail = async ({
   };
 };
 
+/**
+ * Authenticates an existing, verified user with an email/username
+ * and password, and issues a new session.
+ */
 export const loginUser = async (data: LoginInput) => {
   const { identifier, password, ip, userAgent } = data;
 
-  // Existing, verified user Check.
   const user = await UserModel.findOne({
     $or: [{ email: identifier }, { username: identifier }],
   }).select("+password");
 
   if (!user) {
-    throw new ApiError(409, "User does not exist.");
+    throw new ApiError(404, "User does not exist.");
   }
 
-  if (!comparePassword(password, user.password)) {
-    throw new ApiError(409, "Incorrect Password!");
+  const isPasswordValid = await comparePassword(password, user.password);
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Incorrect password.");
   }
 
-  const refreshToken = generateRefreshToken(user._id.toString());
-
-  const session = await SessionModel.create({
-    userId: user._id,
-    ip,
-    userAgent,
-    refreshTokenHash: hashRefreshToken(refreshToken),
-    expiresAt: new Date(Date.now() + SESSION_TTL_DAYS * MS_PER_DAY),
-  });
-
-  const accessToken = generateAccessToken(
+  const { accessToken, refreshToken } = await createSessionAndTokens(
     user._id.toString(),
-    session._id.toString()
+    ip,
+    userAgent
   );
 
   const safeUser = {
@@ -290,20 +245,84 @@ export const loginUser = async (data: LoginInput) => {
   };
 };
 
+/**
+ * Logs a user out of a single device by deleting that device's session.
+ */
 export const logoutUser = async ({ sessionId }: LogoutInput) => {
   return await SessionModel.findByIdAndDelete(sessionId);
 };
 
+/**
+ * Logs a user out of every device by deleting all of their sessions.
+ */
 export const logoutUserFromAllDevices = async ({
   userId,
 }: LogoutAllDevicesInput) => {
-  const sessions = await SessionModel.findOne({ userId });
+  const result = await SessionModel.deleteMany({ userId });
 
-  console.log(sessions);
-
-  if (!sessions) {
-    throw new ApiError(400, "Sessions");
+  if (result.deletedCount === 0) {
+    throw new ApiError(404, "No active sessions found.");
   }
 
-  return await SessionModel.findByIdAndDelete(sessions[0]._id);
+  return result;
+};
+
+/**
+ * Rotates a refresh token: verifies it, checks it against the hash
+ * on file for its session, and issues a fresh access/refresh pair.
+ *
+ * Reuse detection: a refresh token that verifies correctly but no
+ * longer matches its session's stored hash means it was already
+ * rotated away earlier — i.e. someone is replaying a stolen token.
+ * When that happens, every session for the user is torn down and
+ * they're forced to log in again everywhere.
+ */
+export const refreshTokens = async (oldRefreshToken: string | undefined) => {
+  if (!oldRefreshToken) {
+    throw new ApiError(401, "No refresh token provided. Please log in again.");
+  }
+
+  let payload: RefreshTokenPayload;
+
+  try {
+    payload = jwt.verify(
+      oldRefreshToken,
+      env.REFRESH_TOKEN_SECRET
+    ) as RefreshTokenPayload;
+  } catch {
+    throw new ApiError(401, "Refresh token expired. Please log in again.");
+  }
+
+  const { userId, sessionId } = payload;
+
+  // Look up by session ID, not by hash — this is what lets us tell
+  // "session gone" apart from "token replayed" below.
+  const session =
+    await SessionModel.findById(sessionId).select("+refreshTokenHash");
+
+  if (!session || session.userId.toString() !== userId) {
+    throw new ApiError(401, "Session not found. Please log in again.");
+  }
+
+  const incomingTokenHash = hashRefreshToken(oldRefreshToken);
+
+  if (incomingTokenHash !== session.refreshTokenHash) {
+    // Valid signature, valid session ID, but the hash is stale —
+    // this exact token was already used and rotated out once
+    // before. Treat it as theft: burn every session for this user.
+    await SessionModel.deleteMany({ userId });
+    throw new ApiError(
+      401,
+      "Refresh token reuse detected. All sessions have been logged out for your safety. Please log in again."
+    );
+  }
+
+  const refreshToken = generateRefreshToken(userId, sessionId);
+  const accessToken = generateAccessToken(userId, sessionId);
+
+  session.refreshTokenHash = hashRefreshToken(refreshToken);
+  session.expiresAt = getSessionExpiry();
+  await session.save();
+
+  return { accessToken, refreshToken };
 };

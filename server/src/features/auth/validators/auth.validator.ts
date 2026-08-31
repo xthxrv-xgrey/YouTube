@@ -5,6 +5,7 @@ import {
   loginSchema,
 } from "#features/auth/schema/auth.schema.js";
 
+/** Validates POST /auth/register body against `registerSchema`. */
 export const validateRegister = (
   req: Request,
   res: Response,
@@ -21,10 +22,13 @@ export const validateRegister = (
   }
 
   req.body = result.data;
-
   next();
 };
 
+/**
+ * Validates POST /auth/verify-email: checks the OTP body shape
+ * and confirms a verification cookie was actually sent.
+ */
 export const validateEmailVerification = (
   req: Request,
   res: Response,
@@ -32,7 +36,6 @@ export const validateEmailVerification = (
 ) => {
   const result = emailVerificationSchema.safeParse(req.body);
 
-  // Validate request body
   if (!result.success) {
     return res.status(400).json({
       success: false,
@@ -41,9 +44,7 @@ export const validateEmailVerification = (
     });
   }
 
-  // Check verification token cookie
   const verificationToken = req.cookies?.verificationToken;
-
   if (!verificationToken) {
     return res.status(401).json({
       success: false,
@@ -52,10 +53,10 @@ export const validateEmailVerification = (
   }
 
   req.body = result.data;
-
   next();
 };
 
+/** Validates POST /auth/login body against `loginSchema`. */
 export const validateLogin = (
   req: Request,
   res: Response,

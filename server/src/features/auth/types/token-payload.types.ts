@@ -5,6 +5,7 @@ export type AccessTokenPayload = {
 
 export type RefreshTokenPayload = {
   userId: string;
+  sessionId: string;
 };
 
 export type VerificationTokenPayload = {

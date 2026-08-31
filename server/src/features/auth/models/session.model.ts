@@ -12,6 +12,11 @@ export interface ISession {
 
 export type SessionDocument = HydratedDocument<ISession>;
 
+/**
+ * One document per logged-in device. Storing only the refresh token's
+ * hash (never the raw token) means a leaked DB doesn't hand out
+ * usable refresh tokens.
+ */
 const sessionSchema = new mongoose.Schema<ISession>(
   {
     userId: {
@@ -49,7 +54,7 @@ const sessionSchema = new mongoose.Schema<ISession>(
   }
 );
 
-// Automatically deletes the session when expiresAt is reached.
+// Automatically deletes the session once `expiresAt` is reached.
 sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 export const SessionModel = mongoose.model<ISession>("Session", sessionSchema);

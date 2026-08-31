@@ -13,6 +13,7 @@ const requiredEnvFields = [
   "VERIFICATION_TOKEN_SECRET",
   "VERIFICATION_TOKEN_EXPIRY",
   "DEFAULT_AVATAR",
+  "RESEND_API_KEY",
 ] as const;
 
 const missingFields = requiredEnvFields.filter((field) => !process.env[field]);
@@ -48,6 +49,8 @@ const env = {
     .VERIFICATION_TOKEN_EXPIRY! as StringValue,
 
   DEFAULT_AVATAR: process.env.DEFAULT_AVATAR!,
+
+  RESEND_API_KEY: process.env.RESEND_API_KEY,
 } as const;
 
 export default env;
