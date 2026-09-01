@@ -1,5 +1,6 @@
 import express, { type Express, type Request, type Response } from "express";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 
 import ApiResponse from "#core/utils/ApiResponse.js";
 import ApiError from "#core/errors/ApiError.js";
@@ -79,8 +80,16 @@ app.use(morgan("dev"));
  *   name: "John"
  * }
  */
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 app.use(cookieParser());
+
 /*
  * ==========================================================================
  * Routes

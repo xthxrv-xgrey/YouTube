@@ -7,8 +7,10 @@ import type { CookieOptions } from "express";
  */
 const baseAuthCookieOptions: CookieOptions = {
   httpOnly: true,
-  secure: true,
-  sameSite: "strict",
+  secure: false,
+  sameSite: "lax",
+  maxAge: 150 * 1000,
+  path: "/",
 };
 
 export const verificationCookieOptions: CookieOptions = {

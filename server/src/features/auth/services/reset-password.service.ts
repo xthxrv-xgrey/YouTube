@@ -1,20 +1,22 @@
 import jwt from "jsonwebtoken";
+
 import env from "#config/env.js";
 import { OTP_ATTEMPT_LIMIT } from "#constants/auth.js";
 import ApiError from "#core/errors/ApiError.js";
 import { UserModel } from "#features/user/user.model.js";
+import { sendPasswordResetSuccess } from "#integrations/email/email.service.js";
 import { compareOTP } from "#utils/otp.utils.js";
+
 import { PasswordResetModel } from "../models/password-reset.model.js";
 import { SessionModel } from "../models/session.model.js";
 import { ResetPasswordInput } from "../types/auth.types.js";
 import { VerificationTokenPayload } from "../types/token-payload.types.js";
 import { createSessionAndTokens } from "../utils/auth.utils.js";
 import { hashPassword } from "../utils/password.utils.js";
-import { sendPasswordResetSuccess } from "#integrations/email/email.service.js";
 
 /**
- * Completes a password reset: verifies the OTP, updates the password,
- * revokes all existing sessions, and starts a fresh session.
+ * Completes a password reset by verifying the OTP, updating the password,
+ * revoking existing sessions, and starting a fresh session.
  */
 export const resetPasswordService = async ({
   verificationToken,
@@ -44,13 +46,11 @@ export const resetPasswordService = async ({
     );
   }
 
-
   if (payload.purpose !== "password_reset") {
     throw new ApiError(400, "Invalid verification session.");
   }
 
-  const { tokenId } = payload;
-  const passwordReset = await PasswordResetModel.findById(tokenId);
+  const passwordReset = await PasswordResetModel.findById(payload.tokenId);
 
   if (!passwordReset) {
     throw new ApiError(400, "Password reset session expired.");
@@ -64,16 +64,14 @@ export const resetPasswordService = async ({
 
   if (!isOTPValid) {
     await PasswordResetModel.findByIdAndUpdate(passwordReset._id, {
-      attempts: passwordReset.attempts + 1,
+      $inc: { attempts: 1 },
     });
+
     throw new ApiError(400, "Invalid OTP.");
   }
 
   const hashedNewPassword = await hashPassword(newPassword);
 
-  // Bug fix: must update by passwordReset.userId, not passwordReset._id
-  // (the reset document's own ID) — otherwise this updates the wrong
-  // document (or nothing) and the user's password never actually changes.
   const user = await UserModel.findByIdAndUpdate(
     passwordReset.userId,
     { password: hashedNewPassword },
@@ -86,10 +84,8 @@ export const resetPasswordService = async ({
 
   await PasswordResetModel.findByIdAndDelete(passwordReset._id);
 
-  // Revoke every existing session before issuing a new one, so a
-  // stolen session can't survive a password reset.
-  // Uses deleteMany directly instead of logoutAllDevicesService to
-  // avoid throwing when there are zero existing sessions.
+  // Revoke all existing sessions so previously issued tokens
+  // cannot be used after the password has been changed.
   await SessionModel.deleteMany({ userId: user._id });
 
   const { accessToken, refreshToken } = await createSessionAndTokens(
@@ -100,5 +96,9 @@ export const resetPasswordService = async ({
 
   await sendPasswordResetSuccess(user.email, user.firstName);
 
-  return { user, accessToken, refreshToken };
+  return {
+    user,
+    accessToken,
+    refreshToken,
+  };
 };

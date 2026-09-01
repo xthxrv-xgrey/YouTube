@@ -52,7 +52,6 @@ const pendingUserSchema = new mongoose.Schema(
       required: [true, "Password is required"],
     },
 
-    // Stores a bcrypt hash of the OTP — never the plaintext code.
     otpHash: {
       type: String,
       required: true,
@@ -61,6 +60,11 @@ const pendingUserSchema = new mongoose.Schema(
     expiresAt: {
       type: Date,
       required: true,
+    },
+
+    attempts: {
+      type: Number,
+      default: 0,
     },
   },
   {

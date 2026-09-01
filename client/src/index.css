@@ -1,0 +1,136 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
+
+@import "tailwindcss";
+
+/* =========================================================
+   TAILWIND THEME
+   ========================================================= */
+
+@theme {
+  /* ---------- Colors ---------- */
+
+  --color-background: var(--bg-color);
+  --color-surface: var(--surface-color);
+  --color-surface-secondary: var(--surface-secondary);
+
+  --color-foreground: var(--text-color);
+  --color-muted: var(--muted-text);
+  --color-subtle: var(--subtle-text);
+
+  --color-primary: var(--primary-color);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-text);
+
+  --color-success: var(--success-color);
+  --color-danger: var(--danger-color);
+
+  --color-border: var(--border-color);
+
+  /* ---------- Fonts ---------- */
+
+  --font-body: "Roboto", Arial, sans-serif;
+  --font-display: "YouTube Sans", "Roboto", Arial, sans-serif;
+  --font-logo: "YouTube Sans", "Roboto", Arial, sans-serif;
+  --font-mono: "Roboto Mono", monospace;
+
+  /* ---------- Font Sizes ---------- */
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+  --text-4xl: 2.5rem;
+
+  /* ---------- Radius ---------- */
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* ---------- Motion ---------- */
+
+  --transition-fast: 0.2s;
+}
+
+/* =========================================================
+   ROOT DESIGN TOKENS
+   YOUTUBE-STYLE LIGHT THEME
+========================================================= */
+
+:root {
+  /* ---------- Backgrounds ---------- */
+  --bg-color: #ffffff;
+  --surface-color: #ffffff;
+  --surface-secondary: #f2f2f2;
+
+  /* ---------- Text ---------- */
+  --text-color: #0f0f0f;
+  --muted-text: #606060;
+  --subtle-text: #909090;
+
+  /* ---------- Brand ---------- */
+  --primary-color: #ff0000;
+  --primary-hover: #cc0000;
+  --primary-text: #ffffff;
+
+  /* ---------- Status ---------- */
+  --success-color: #2ba640;
+  --danger-color: #ff4e45;
+
+  /* ---------- Borders ---------- */
+  --border-color: #e5e5e5;
+}
+
+/* =========================================================
+   DARK THEME
+========================================================= */
+
+html[data-theme="dark"] {
+  /* ---------- Backgrounds ---------- */
+  --bg-color: #0f0f0f;
+  --surface-color: #0f0f0f;
+  --surface-secondary: #212121;
+
+  /* ---------- Text ---------- */
+  --text-color: #f1f1f1;
+  --muted-text: #aaaaaa;
+  --subtle-text: #717171;
+
+  /* ---------- Brand ---------- */
+  --primary-color: #ff0000;
+  --primary-hover: #ff3333;
+  --primary-text: #ffffff;
+
+  /* ---------- Status ---------- */
+  --success-color: #2ba640;
+  --danger-color: #ff4e45;
+
+  /* ---------- Borders ---------- */
+  --border-color: #3f3f3f;
+}
+
+/* =========================================================
+   GLOBALS
+========================================================= */
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+/* =========================================================
+   UTILITIES
+========================================================= */
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}

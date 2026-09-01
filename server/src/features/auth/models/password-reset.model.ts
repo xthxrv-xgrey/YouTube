@@ -13,7 +13,7 @@ const passwordResetSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    // Stores a bcrypt hash of the OTP — never the plaintext code.
+
     otpHash: {
       type: String,
       required: true,

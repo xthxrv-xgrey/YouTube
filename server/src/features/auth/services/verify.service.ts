@@ -1,13 +1,16 @@
 import jwt from "jsonwebtoken";
+
+import env from "#config/env.js";
+import { OTP_ATTEMPT_LIMIT } from "#constants/auth.js";
 import ApiError from "#core/errors/ApiError.js";
+import { UserModel } from "#features/user/user.model.js";
+import { sendEmailVerificationSuccess } from "#integrations/email/email.service.js";
+import { compareOTP } from "#utils/otp.utils.js";
+
+import { PendingUserModel } from "../models/pending-user.model.js";
 import { VerifyEmailInput } from "../types/auth.types.js";
 import { VerificationTokenPayload } from "../types/token-payload.types.js";
-import { PendingUserModel } from "../models/pending-user.model.js";
-import { compareOTP } from "#utils/otp.utils.js";
-import { UserModel } from "#features/user/user.model.js";
 import { createSessionAndTokens } from "../utils/auth.utils.js";
-import env from "#config/env.js";
-import { sendEmailVerificationSuccess } from "#integrations/email/email.service.js";
 
 /**
  * Verifies a user's email address and starts a session.
@@ -43,9 +46,7 @@ export const verifyEmailService = async ({
     throw new ApiError(400, "Invalid verification session.");
   }
 
-  const { tokenId } = payload;
-
-  const pendingUser = await PendingUserModel.findById(tokenId);
+  const pendingUser = await PendingUserModel.findById(payload.tokenId);
 
   if (!pendingUser) {
     throw new ApiError(
@@ -54,13 +55,26 @@ export const verifyEmailService = async ({
     );
   }
 
+  if (pendingUser.attempts >= OTP_ATTEMPT_LIMIT) {
+    await PendingUserModel.findByIdAndDelete(pendingUser._id);
+
+    throw new ApiError(
+      429,
+      "Too many incorrect attempts. Please start the registration process again."
+    );
+  }
+
   const isOTPValid = await compareOTP(otp, pendingUser.otpHash);
 
   if (!isOTPValid) {
+    await PendingUserModel.findByIdAndUpdate(pendingUser._id, {
+      $inc: { attempts: 1 },
+    });
+
     throw new ApiError(400, "Invalid OTP. Please enter the correct OTP.");
   }
 
-  await PendingUserModel.findByIdAndDelete(tokenId);
+  await PendingUserModel.findByIdAndDelete(pendingUser._id);
 
   const user = await UserModel.create({
     firstName: pendingUser.firstName,
@@ -76,10 +90,18 @@ export const verifyEmailService = async ({
     userAgent
   );
 
+  const safeUser = {
+    firstName: user.firstName,
+    lastName: user.lastName,
+    username: user.username,
+    email: user.email,
+    avatar: user.avatar,
+  };
+
   await sendEmailVerificationSuccess(user.email, user.firstName);
 
   return {
-    user,
+    user: safeUser,
     accessToken,
     refreshToken,
   };
