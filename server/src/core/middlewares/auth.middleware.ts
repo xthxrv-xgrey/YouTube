@@ -1,7 +1,7 @@
 import env from "#config/env.js";
 import ApiError from "#core/errors/ApiError.js";
 import { SessionModel } from "#features/auth/models/session.model.js";
-import { UserModel } from "#features/user/user.model.js";
+import { UserModel } from "#features/user/models/user.model.js";
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
