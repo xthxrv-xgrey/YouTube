@@ -1,11 +1,10 @@
 import env from "#config/env.js";
 import ApiError from "#core/errors/ApiError.js";
-import { SessionModel } from "#features/auth/models/session.model.js";
-import { UserModel } from "#features/user/models/user.model.js";
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
 import { AccessTokenPayload } from "#features/auth/types/token-payload.types.js";
+import UserModel from "#features/user/models/user.model.js";
 
 /**
  * Type guard confirming a decoded JWT payload has the shape
@@ -14,11 +13,7 @@ import { AccessTokenPayload } from "#features/auth/types/token-payload.types.js"
 const isAccessTokenPayload = (
   payload: string | JwtPayload
 ): payload is AccessTokenPayload => {
-  return (
-    typeof payload !== "string" &&
-    typeof payload.userId === "string" &&
-    typeof payload.sessionId === "string"
-  );
+  return typeof payload !== "string" && typeof payload.userId === "string";
 };
 
 /**
@@ -54,21 +49,13 @@ export const authMiddleware = async (
       throw new ApiError(401, "Invalid access token payload.");
     }
 
-    const [user, session] = await Promise.all([
-      UserModel.findById(decoded.userId),
-      SessionModel.findById(decoded.sessionId),
-    ]);
+    const [user] = await Promise.all([UserModel.findById(decoded.userId)]);
 
     if (!user) {
       throw new ApiError(404, "User not found.");
     }
 
-    if (!session) {
-      throw new ApiError(401, "Session not found or expired.");
-    }
-
     req.user = user;
-    req.session = session;
 
     next();
   } catch (error) {

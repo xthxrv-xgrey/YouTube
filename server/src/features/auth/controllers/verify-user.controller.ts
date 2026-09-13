@@ -3,11 +3,11 @@ import ApiResponse from "#core/utils/ApiResponse.js";
 import type { Request, Response } from "express";
 import { verifyUser } from "#features/auth/services/verify-user.service.js";
 import { createSession } from "#features/auth/utils/session.util.js";
-import { refreshTokenCookieConfig } from "../config/cookie.config";
+import { refreshTokenCookieConfig } from "#features/auth/config/cookie.config.js";
 
 export const verifyUserController = asyncHandler(
   async (req: Request, res: Response) => {
-    const { verificationToken } = req.cookies;
+    const { verificationToken } = req.cookies;  
     const { otp } = req.body;
 
     const { safeUser } = await verifyUser({ verificationToken, otp });

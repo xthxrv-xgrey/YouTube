@@ -2,29 +2,12 @@ import { createHash } from "node:crypto";
 import jwt from "jsonwebtoken";
 
 import env from "#config/env.js";
-
-// ============================================================================
-// Types
-// ============================================================================
-
-export const enum VerificationTokenPurpose {
-  EMAIL_VERIFICATION = "email_verification",
-  FORGOT_PASSWORD = "forgot_password",
-}
-
-interface VerificationTokenPayload {
-  tokenId: string;
-  purpose: VerificationTokenPurpose;
-}
-
-interface AccessTokenPayload {
-  userId: string;
-}
-
-interface RefreshTokenPayload {
-  userId: string;
-  sessionId: string;
-}
+import {
+  AccessTokenPayload,
+  RefreshTokenPayload,
+  VerificationTokenPayload,
+  VerificationTokenPurpose,
+} from "#features/auth/types/token-payload.types.js";
 
 // ============================================================================
 // Verification Token

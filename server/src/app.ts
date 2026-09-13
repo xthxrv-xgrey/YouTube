@@ -7,6 +7,8 @@ import ApiError from "#core/errors/ApiError.js";
 import errorHandler from "#core/errors/errorHandler.js";
 
 import authRouter from "#features/auth/auth.router.js";
+import userRouter from "#features/user/user.routes.js";
+import channelRouter from "#features/channel/channel.routes.js";
 
 /*
  * ==========================================================================
@@ -106,6 +108,8 @@ app.use(cookieParser());
  * POST /api/v1/auth/logout
  */
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/user", userRouter);
+app.use("/api/v1/channel", channelRouter);
 
 /*
  * ==========================================================================

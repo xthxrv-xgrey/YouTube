@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, InferSchemaType } from "mongoose";
 import env from "#config/env.js";
 import { EMAIL_REGEX, USERNAME_REGEX } from "#constants/regex.js";
 
@@ -30,7 +30,7 @@ const UserSchema = new Schema(
 
     avatarUrl: {
       type: String,
-      default: env.DEFAULT_AVATAR,
+      default: env.DEFAULT_USER_AVATAR,
     },
 
     accountStatus: {
@@ -45,12 +45,15 @@ const UserSchema = new Schema(
     passwordHash: {
       type: String,
       required: true,
+      select: false,
     },
   },
   {
     timestamps: true,
   }
 );
+
+export type User = InferSchemaType<typeof UserSchema>;
 
 const UserModel = model("User", UserSchema);
 

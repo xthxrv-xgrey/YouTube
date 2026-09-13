@@ -1,13 +1,11 @@
 import ApiError from "#core/errors/ApiError.js";
-import UserModel from "#features/users/models/user.model.js";
+import UserModel from "#features/user/models/user.model.js";
 import UnverifiedUserModel from "#features/auth/models/unverified-user.model.js";
 import { hashPassword } from "#features/auth/utils/password.util.js";
 import { generateOTP, hashOTP } from "#features/auth/utils/otp.utils.js";
 import { sendEmailVerificationOTP } from "#integrations/email/email.service.js";
-import {
-  generateVerificationToken,
-  VerificationTokenPurpose,
-} from "#features/auth/utils/token.utils.js";
+import { generateVerificationToken } from "#features/auth/utils/token.utils.js";
+import { VerificationTokenPurpose } from "#features/auth/types/token-payload.types.js";
 
 interface RegisterUserInput {
   name: string;

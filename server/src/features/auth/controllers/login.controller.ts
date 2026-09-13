@@ -1,8 +1,8 @@
-import asyncHandler from "#core/utils/asyncHandler.ts";
+import asyncHandler from "#core/utils/asyncHandler.js";
 import { Request, Response } from "express";
 import { loginUser } from "#features/auth/services/login.service.js";
 import { createSession } from "#features/auth/utils/session.util.js";
-import ApiResponse from "#core/utils/ApiResponse.ts";
+import ApiResponse from "#core/utils/ApiResponse.js";
 import { refreshTokenCookieConfig } from "#features/auth/config/cookie.config.js";
 
 export const loginController = asyncHandler(

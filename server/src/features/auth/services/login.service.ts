@@ -1,7 +1,7 @@
-import ApiError from "#core/errors/ApiError.ts";
-import UserModel from "#features/users/models/user.model.ts";
-import { sendNewLoginEmail } from "#integrations/email/email.service.ts";
-import { verifPassword } from "../utils/password.util";
+import ApiError from "#core/errors/ApiError.js";
+import UserModel from "#features/user/models/user.model.js";
+import { sendNewLoginEmail } from "#integrations/email/email.service.js";
+import { verifPassword } from "#features/auth/utils/password.util.js";
 
 interface LoginUserInput {
   identifier: string;
@@ -13,7 +13,7 @@ export const loginUser = async (input: LoginUserInput) => {
 
   const user = await UserModel.findOne({
     $or: [{ email: identifier }, { username: identifier }],
-  });
+  }).select("+passwordHash");
 
   if (!user) throw new ApiError(404, "User not found");
 

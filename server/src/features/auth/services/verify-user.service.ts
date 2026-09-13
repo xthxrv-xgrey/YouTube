@@ -1,13 +1,11 @@
-import {
-  verifyVerificationToken,
-  VerificationTokenPurpose,
-} from "#features/auth/utils/token.utils.js";
+import { verifyVerificationToken } from "#features/auth/utils/token.utils.js";
 import UnverifiedUserModel from "#features/auth/models/unverified-user.model.js";
-import ApiError from "#core/errors/ApiError.ts";
+import ApiError from "#core/errors/ApiError.js";
 import { compareOTP } from "#features/auth/utils/otp.utils.js";
-import UserModel from "#features/users/models/user.model.ts";
-import { sendEmailVerificationSuccess } from "#integrations/email/email.service.ts";
-import { OTP_ATTEMPT_LIMIT } from "#constants/auth.ts";
+import UserModel from "#features/user/models/user.model.js";
+import { sendEmailVerificationSuccess } from "#integrations/email/email.service.js";
+import { OTP_ATTEMPT_LIMIT } from "#constants/auth.js";
+import { VerificationTokenPurpose } from "#features/auth/types/token-payload.types.js";
 
 interface VerifyUserInput {
   verificationToken: string;
