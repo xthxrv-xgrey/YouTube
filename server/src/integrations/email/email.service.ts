@@ -21,7 +21,6 @@ export const sendEmailVerificationOTP = async (
       subject: "Verify your email address",
       html: emailVerificationOtpHtml(otp),
     });
-
     return true;
   } catch {
     return false;
@@ -53,16 +52,13 @@ export const sendEmailVerificationSuccess = async (
  */
 export const sendNewLoginEmail = async (
   email: string,
-  name: string,
-  device: string,
-  browser: string,
-  ip: string
+  name: string
 ): Promise<boolean> => {
   try {
     await emailProvider.sendEmail({
       to: email,
       subject: "New sign-in detected",
-      html: loginSuccessHtml(name, device, browser, ip),
+      html: loginSuccessHtml(name),
     });
 
     return true;

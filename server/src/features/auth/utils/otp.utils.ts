@@ -24,5 +24,5 @@ export const compareOTP = async (
   otp: string,
   hashedOTP: string
 ): Promise<boolean> => {
-  return bcrypt.compare(otp, hashedOTP);
+  return await bcrypt.compare(otp, hashedOTP);
 };

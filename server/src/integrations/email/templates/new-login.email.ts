@@ -1,9 +1,4 @@
-export const loginSuccessHtml = (
-  name: string,
-  device: string,
-  browser: string,
-  ip: string
-): string => {
+export const loginSuccessHtml = (name: string): string => {
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -52,22 +47,6 @@ export const loginSuccessHtml = (
               border-radius: 8px;
             "
           >
-            <p style="margin: 0 0 12px; font-weight: bold;">
-              Sign-in details
-            </p>
-
-            <p style="margin: 8px 0;">
-              <strong>Device:</strong> ${device}
-            </p>
-
-            <p style="margin: 8px 0;">
-              <strong>Browser:</strong> ${browser}
-            </p>
-
-            <p style="margin: 8px 0;">
-              <strong>IP address:</strong> ${ip}
-            </p>
-          </div>
 
           <p>
             If this was you, you don't need to do anything.
