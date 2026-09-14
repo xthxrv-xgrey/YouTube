@@ -4,9 +4,13 @@ import HeaderRight from "./HeaderRight";
 
 const Header = () => {
   return (
-    <header className="bg-background h-16 flex flex-row  justify-between items-center px-5">
+    <header className="bg-background h-16 flex items-center px-5">
       <HeaderLeft />
-      <HeaderCenter />
+
+      <div className="flex-1 min-w-0">
+        <HeaderCenter />
+      </div>
+
       <HeaderRight />
     </header>
   );

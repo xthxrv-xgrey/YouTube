@@ -1,5 +1,5 @@
 import { useTheme } from "@/shared/hooks/useTheme";
-import { Menu } from "lucide-react";
+import { Menu, Moon, Sun } from "lucide-react";
 import { Link } from "react-router";
 
 const lightLogo = "./src/assets/logo/yt-text-logo-dark.png";
@@ -18,7 +18,7 @@ const HeaderLeft = () => {
           className="h-10"
         />
       </Link>
-      <button onClick={toggleTheme}>Toggle theme</button>
+      <button onClick={toggleTheme}>{isLight ? <Moon /> : <Sun />}</button>
     </div>
   );
 };
