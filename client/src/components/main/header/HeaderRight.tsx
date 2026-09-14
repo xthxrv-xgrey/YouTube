@@ -1,10 +1,16 @@
-import { Bell, CircleUserRound, EllipsisVertical, Plus } from "lucide-react";
+import {
+  Bell,
+  CircleUserRound,
+  EllipsisVertical,
+  LogOut,
+  Plus,
+} from "lucide-react";
 import { Link } from "react-router";
 
 import { useAuth } from "@/shared/hooks/useAuth";
 
 const HeaderRight = () => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
 
   // Don't render auth-dependent UI while checking authentication
   if (isLoading) {
@@ -17,14 +23,14 @@ const HeaderRight = () => {
 
   if (isAuthenticated && user) {
     return (
-      <div className="flex flex-row items-center justify-center gap-5">
+      <div className="flex flex-row items-center justify-center gap-4">
         {/* Create */}
         <button
           type="button"
           className="flex cursor-pointer flex-row items-center gap-2 rounded-full bg-surface-secondary px-4 py-2"
         >
           <Plus className="h-5 w-5" />
-          <span>Create</span>
+          <span className="text-sm">Create</span>
         </button>
 
         {/* Notifications */}
@@ -36,6 +42,16 @@ const HeaderRight = () => {
           <Bell className="h-10 w-10 rounded-full p-2 hover:bg-surface-secondary" />
         </button>
 
+        {/* Logout */}
+        <button
+          type="button"
+          className="cursor-pointer rounded-full"
+          aria-label="Notifications"
+          onClick={logout}
+        >
+          <LogOut className="h-10 w-10 rounded-full p-2 hover:bg-surface-secondary" />
+        </button>
+
         {/* User avatar */}
         <button
           type="button"
@@ -45,7 +61,7 @@ const HeaderRight = () => {
           <img
             src={user.avatarUrl}
             alt={user.name ?? "User avatar"}
-            className="h-10 w-10 rounded-full object-cover"
+            className="h-8 w-8 rounded-full object-cover"
           />
         </button>
       </div>

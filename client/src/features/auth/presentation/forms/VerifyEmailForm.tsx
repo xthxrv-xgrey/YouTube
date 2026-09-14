@@ -1,35 +1,36 @@
-import axios from "axios";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-
-type Inputs = {
-  otp: string;
-};
+import { isAxiosError } from "axios";
+import { VerifyEmailInput } from "../../types/form-inputs";
+import { verifyUser } from "../../services/auth.api";
 
 const VerifyEmailForm = () => {
-  const { register, handleSubmit, reset } = useForm<Inputs>();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting },
+  } = useForm<VerifyEmailInput>();
   const navigate = useNavigate();
 
-  const onSubmit: SubmitHandler<Inputs> = async (data) => {
+  const onSubmit: SubmitHandler<VerifyEmailInput> = async (data) => {
     try {
-      await axios.post("http://localhost:3000/api/v1/auth/verify-user", data, {
-        withCredentials: true,
-      });
+      await verifyUser(data);
 
       toast.success("Email Verification Successfull!");
+      reset();
 
       setTimeout(() => {
         navigate("/");
       }, 2000);
-
-      reset();
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.log("Status:", error.response?.status);
-        console.log("Response:", error.response?.data);
+      if (isAxiosError(error)) {
+        const message =
+          error.response?.data?.message ?? "Email verification failed";
+        toast.error(message);
       } else {
-        console.error(error);
+        toast.error("Something went wrong");
       }
     }
   };
@@ -41,16 +42,17 @@ const VerifyEmailForm = () => {
         className="flex flex-col gap-5 p-10 border border-border rounded-xl"
       >
         <input
-          type="test"
+          type="text"
           placeholder="otp"
           className="border border-border p-5 rounded-2xl"
           {...register("otp")}
         />
         <button
           type="submit"
-          className="border border-border p-5 rounded-2xl bg-red-600"
+          disabled={isSubmitting}
+          className="border border-border p-5 rounded-2xl bg-red-600 disabled:opacity-50"
         >
-          Register
+          {isSubmitting ? "Verifying..." : "Verify"}
         </button>
       </form>
     </div>

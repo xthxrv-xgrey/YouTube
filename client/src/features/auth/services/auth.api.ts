@@ -52,6 +52,10 @@ export const registerUser = async (
   }
 };
 
+export const logoutUser = async (): Promise<any> => {
+  await axiosInstance.post<RegisterData>("/auth/logout");
+};
+
 interface VerifyUserData {
   message: string;
   user: User;

@@ -1,3 +1,4 @@
+import { useSidebar } from "@/shared/hooks/useSidebar";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { Menu, Moon, Sun } from "lucide-react";
 import { Link } from "react-router";
@@ -7,9 +8,12 @@ const darkLogo = "./src/assets/logo/yt-text-logo-light.png";
 
 const HeaderLeft = () => {
   const { isLight, toggleTheme } = useTheme();
+  const { toggleSidebarStyle } = useSidebar();
   return (
     <div className="flex items-center">
-      <Menu className="w-10 h-10 p-2 rounded-full hover:bg-surface-secondary cursor-pointer" />
+      <button onClick={toggleSidebarStyle}>
+        <Menu className="w-10 h-10 p-2 rounded-full hover:bg-surface-secondary cursor-pointer" />
+      </button>
 
       <Link to="/">
         <img

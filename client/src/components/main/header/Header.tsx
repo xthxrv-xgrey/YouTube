@@ -4,10 +4,10 @@ import HeaderRight from "./HeaderRight";
 
 const Header = () => {
   return (
-    <header className="bg-background h-16 flex items-center px-5">
+    <header className="sticky top-0 z-50 flex h-16 items-center bg-background/70 px-5 backdrop-blur-xl supports-backdrop-filter:bg-background/90">
       <HeaderLeft />
 
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <HeaderCenter />
       </div>
 

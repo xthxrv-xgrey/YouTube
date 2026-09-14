@@ -9,7 +9,7 @@ interface CreateChannelInput {
 }
 
 export const createChannel = async (input: CreateChannelInput) => {
-  const { owner, handle, name } = input;
+  const { owner, handle } = input;
 
   const userAlreadyHasAChannel = await ChannelModel.findOne({ owner });
   if (userAlreadyHasAChannel)
@@ -17,6 +17,8 @@ export const createChannel = async (input: CreateChannelInput) => {
 
   const existingHandle = await ChannelModel.findOne({ handle });
   if (existingHandle) throw new ApiError(400, "Handle Already in use");
+
+  input = { ...input, handle: "@" + handle };
 
   const channel = await ChannelModel.create(input);
 
