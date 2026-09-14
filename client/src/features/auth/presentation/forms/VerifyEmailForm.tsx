@@ -13,7 +13,7 @@ const VerifyEmailForm = () => {
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     try {
-      await axios.post("http://localhost:3000/api/v1/auth/verify-email", data, {
+      await axios.post("http://localhost:3000/api/v1/auth/verify-user", data, {
         withCredentials: true,
       });
 

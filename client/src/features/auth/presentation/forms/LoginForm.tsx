@@ -1,43 +1,33 @@
-import axios from "axios";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
-
-type Inputs = {
-  identifier: string;
-  password: string;
-};
+import { LoginInput } from "../../types/form-inputs";
+import { loginUser } from "../../services/auth.api";
+import { useAuthStore } from "@/shared/store/authStore";
+import { isAxiosError } from "axios";
 
 const LoginForm = () => {
   const {
     register,
     handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<Inputs>();
+    formState: { errors, isSubmitting },
+  } = useForm<LoginInput>();
 
   const navigate = useNavigate();
+  const setAuth = useAuthStore((state) => state.setAuth);
 
-  const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    console.log("clicked");
+  const onSubmit: SubmitHandler<LoginInput> = async (data) => {
     try {
-      await axios.post("http://localhost:3000/api/v1/auth/login", data, {
-        withCredentials: true,
-      });
-
-      toast.success("Login Successfull!");
-
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
-
-      reset();
+      const { user, accessToken } = await loginUser(data);
+      setAuth(user, accessToken);
+      toast.success("Logged in successfully");
+      navigate("/");
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.log("Status:", error.response?.status);
-        console.log("Response:", error.response?.data);
+      if (isAxiosError(error)) {
+        const message = error.response?.data?.message ?? "Login failed";
+        toast.error(message);
       } else {
-        console.error(error);
+        toast.error("Something went wrong");
       }
     }
   };
@@ -46,29 +36,43 @@ const LoginForm = () => {
     <div>
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-5 p-10 border border-border rounded-xl"
+        className="flex flex-col gap-5 p-10 border border-border rounded-xl w-100"
       >
         <input
           type="text"
           placeholder="Enter username or email"
+          autoComplete="username"
           className="border border-border p-5 rounded-2xl"
-          {...register("identifier")}
+          {...register("identifier", { required: true })}
         />
         {errors.identifier && <span>This field is required</span>}
 
         <input
-          type="test"
+          type="password"
           placeholder="password"
+          autoComplete="current-password"
           className="border border-border p-5 rounded-2xl"
-          {...register("password")}
+          {...register("password", { required: true })}
         />
         {errors.password && <span>This field is required</span>}
+
         <button
           type="submit"
-          className="border border-border p-5 rounded-2xl bg-red-600 active:bg-red-200"
+          disabled={isSubmitting}
+          className="border border-border p-5 rounded-2xl bg-red-600 active:bg-red-200 disabled:opacity-50"
         >
-          Login
+          {isSubmitting ? "Logging in..." : "Login"}
         </button>
+        {/* Register redirect */}
+        <p className="mt-6 text-center text-sm text-muted">
+          Don't have an account?{" "}
+          <Link
+            to="/auth/register"
+            className="font-medium text-primary transition-colors hover:text-primary-hover hover:underline"
+          >
+            Create an account
+          </Link>
+        </p>
       </form>
     </div>
   );

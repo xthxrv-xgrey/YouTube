@@ -1,8 +1,9 @@
 import ApiError from "#core/errors/ApiError.ts";
+import { Types } from "mongoose";
 import ChannelModel from "../models/channel.model";
 
 interface CreateChannelInput {
-  owner: string;
+  owner: Types.ObjectId;
   handle: string;
   name: string;
 }

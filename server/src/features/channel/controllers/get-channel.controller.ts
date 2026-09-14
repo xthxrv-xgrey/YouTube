@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import asyncHandler from "#core/utils/asyncHandler.js";
-import ApiResponse from "#core/utils/ApiResponse.ts";
-import { getChannel } from "../services/get-channel.service";
+import ApiResponse from "#core/utils/ApiResponse.js";
+import { getChannel } from "../services/get-channel.service.js";
 
 export const getChannelController = asyncHandler(
   async (req: Request, res: Response) => {

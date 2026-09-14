@@ -1,45 +1,33 @@
-import axios from "axios";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
-
-type Inputs = {
-  firstName: string;
-  lastName: string;
-  username: string;
-  email: string;
-  password: string;
-};
+import { isAxiosError } from "axios";
+import { RegisterInput } from "../../types/form-inputs";
+import { registerUser } from "../../services/auth.api";
 
 const RegisterForm = () => {
-  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<Inputs>();
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterInput>();
 
-  const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    console.log("clicked");
+  const navigate = useNavigate();
+
+  const onSubmit: SubmitHandler<RegisterInput> = async (data) => {
     try {
-      await axios.post("http://localhost:3000/api/v1/auth/register", data, {
-        withCredentials: true,
-      });
+      await registerUser(data);
 
-      toast.success("Otp Sent Successfully!");
+      toast.success("OTP sent successfully");
 
-      setTimeout(() => {
-        navigate("/auth/verify-email");
-      }, 2000);
-
-      reset();
+      navigate("/auth/verify-email");
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.log("Status:", error.response?.status);
-        console.log("Response:", error.response?.data);
+      if (isAxiosError(error)) {
+        const message = error.response?.data?.message ?? "Registration failed";
+
+        toast.error(message);
       } else {
-        console.error(error);
+        toast.error("Something went wrong");
       }
     }
   };
@@ -48,51 +36,61 @@ const RegisterForm = () => {
     <div>
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-5 p-10 border border-border rounded-xl"
+        className="flex flex-col gap-5 p-10 border border-border rounded-xl w-100"
       >
-        <div className="flex flex-row gap-5">
-          <input
-            type="text"
-            placeholder="First Name"
-            className="border border-border p-5 rounded-2xl"
-            {...register("firstName")}
-          />
-          <input
-            type="text"
-            placeholder="Last Name"
-            className="border border-border p-5 rounded-2xl"
-            {...register("lastName")}
-          />
-        </div>
         <input
           type="text"
-          placeholder="username"
+          placeholder="Enter your name"
+          autoComplete="name"
           className="border border-border p-5 rounded-2xl"
-          {...register("username")}
+          {...register("name", { required: true })}
+        />
+        {errors.name && <span>This field is required</span>}
+
+        <input
+          type="text"
+          placeholder="Enter username"
+          autoComplete="username"
+          className="border border-border p-5 rounded-2xl"
+          {...register("username", { required: true })}
         />
         {errors.username && <span>This field is required</span>}
 
         <input
-          type="text"
-          placeholder="email"
+          type="email"
+          placeholder="Enter your email"
+          autoComplete="email"
           className="border border-border p-5 rounded-2xl"
-          {...register("email")}
+          {...register("email", { required: true })}
         />
         {errors.email && <span>This field is required</span>}
 
         <input
-          type="test"
-          placeholder="password"
+          type="password"
+          placeholder="Enter password"
+          autoComplete="new-password"
           className="border border-border p-5 rounded-2xl"
-          {...register("password")}
+          {...register("password", { required: true })}
         />
         {errors.password && <span>This field is required</span>}
+
         <button
           type="submit"
-          className="border border-border p-5 rounded-2xl bg-red-600 active:bg-red-800"
+          disabled={isSubmitting}
+          className="border border-border p-5 rounded-2xl bg-red-600 active:bg-red-200 disabled:opacity-50"
         >
-          Register
+          {isSubmitting ? "Registering..." : "Register"}
         </button>
+        {/* Login redirect */}
+        <p className="mt-6 text-center text-sm text-muted">
+          Already have an account?{" "}
+          <Link
+            to="/auth/login"
+            className="font-medium text-primary transition-colors hover:text-primary-hover hover:underline"
+          >
+            Sign in
+          </Link>
+        </p>
       </form>
     </div>
   );
