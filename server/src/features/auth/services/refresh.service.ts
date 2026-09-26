@@ -13,9 +13,11 @@ interface RefreshInput {
 }
 
 export const refreshService = async ({ refreshToken }: RefreshInput) => {
-  const payload = verifyRefreshToken(refreshToken);
+  let payload;
 
-  if (!payload) {
+  try {
+    payload = verifyRefreshToken(refreshToken);
+  } catch {
     throw new ApiError(401, "Invalid or expired refresh token.");
   }
 

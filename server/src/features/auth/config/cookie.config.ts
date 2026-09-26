@@ -28,7 +28,7 @@ export const refreshTokenCookieConfig: CookieOptions = {
 };
 
 export const verificationTokenCookieConfig: CookieOptions = {
-  maxAge: VERIFICATION_TTL * 60 * 1000,
+  maxAge: VERIFICATION_TTL * 1000,
   httpOnly: true,
   secure: isProduction,
   sameSite: isProduction ? "none" : "lax",
