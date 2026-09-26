@@ -7,6 +7,7 @@ import ApiError from "#core/errors/ApiError.js";
 import errorHandler from "#core/errors/errorHandler.js";
 
 import authRouter from "#features/auth/auth.router.js";
+import userRouter from "#features/user/user.routes.js";
 
 import imageUpload from "#core/middlewares/upload/imageUpload.js";
 
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/user", userRouter);
 
 app.post(
   "/api/v1/test/upload",

@@ -66,7 +66,7 @@ export const verifyUser = async (
 ): Promise<VerifyUserData> => {
   try {
     const response = await axiosInstance.post<VerifyUserData>(
-      "/auth/verify-user",
+      "/auth/verify-email",
       data
     );
 
