@@ -21,11 +21,11 @@ export const loginService = async ({
     $or: [{ email: identifier }, { username: identifier }],
   }).select("+passwordHash");
 
-  if (!user) throw new ApiError(404, "Invalid credentials!");
+  if (!user) throw new ApiError(401, "Invalid credentials!");
 
   const validPassword = await verifPassword(password, user.passwordHash);
 
-  if (!validPassword) throw new ApiError(404, "Invalid credentials!");
+  if (!validPassword) throw new ApiError(401, "Invalid credentials!");
 
   const { accessToken, refreshToken } = await createSession({
     userId: user._id.toString(),
