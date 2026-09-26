@@ -12,6 +12,7 @@ import { loginController } from "./controllers/login.controller.js";
 
 import { logoutController } from "./controllers/logout.controller.js";
 import { logoutAllController } from "./controllers/logout-all.controller.js";
+import { refreshController } from "./controllers/refresh.controller.js";
 
 const router = Router();
 
@@ -45,6 +46,15 @@ router.post("/verify-email", verifyEmailValidator, verifyEmailController);
  * Validate input → get user → create session → issue access/refresh tokens.
  */
 router.post("/login", loginValidator, loginController);
+
+/**
+ * POST /api/v1/auth/refresh
+ *
+ * Refreshes access and refresh tokens.
+ *
+ *
+ */
+router.post("/refresh", refreshController);
 
 /**
  * POST /api/v1/auth/logout
