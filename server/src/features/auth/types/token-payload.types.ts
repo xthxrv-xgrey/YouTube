@@ -14,6 +14,7 @@ export interface VerificationTokenPayload {
 
 export interface AccessTokenPayload {
   userId: string;
+  sessionId: string;
 }
 
 export interface RefreshTokenPayload {

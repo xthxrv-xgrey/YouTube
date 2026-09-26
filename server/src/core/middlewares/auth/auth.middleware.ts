@@ -1,3 +1,4 @@
+/// <reference path="../../../types/express.d.ts" />
 import env from "#config/env.js";
 import ApiError from "#core/errors/ApiError.js";
 import { Request, Response, NextFunction } from "express";
@@ -5,6 +6,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 
 import { AccessTokenPayload } from "#features/auth/types/token-payload.types.js";
 import UserModel from "#features/user/models/user.model.js";
+import SessionModel from "#features/auth/models/session.model.js";
 
 /**
  * Type guard confirming a decoded JWT payload has the shape
@@ -49,14 +51,21 @@ export const authMiddleware = async (
       throw new ApiError(401, "Invalid access token payload.");
     }
 
-    const [user] = await Promise.all([UserModel.findById(decoded.userId)]);
+    const [user, session] = await Promise.all([
+      UserModel.findById(decoded.userId),
+      SessionModel.findById(decoded.sessionId)
+    ]);
 
-    if (!user) {
+    if (!user) 
       throw new ApiError(404, "User not found.");
-    }
+    
 
+    if (!session) 
+      throw new ApiError(404, "Session not found.");
+    
     req.user = user;
-
+    req.session = session;
+    
     next();
   } catch (error) {
     next(error);

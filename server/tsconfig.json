@@ -30,7 +30,12 @@
     "sourceMap": true
   },
 
-  "include": ["server.ts", "src/**/*.ts", "src/**/*.d.ts"],
+  "include": [
+    "server.ts",
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/types/express.d.ts"
+  ],
 
   "exclude": ["node_modules", "dist"]
 }

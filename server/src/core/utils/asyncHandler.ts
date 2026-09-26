@@ -1,3 +1,4 @@
+/// <reference path="../../types/express.d.ts" />
 import { Request, Response, NextFunction, RequestHandler } from "express";
 
 type AsyncHandler<

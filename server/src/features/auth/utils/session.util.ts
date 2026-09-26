@@ -14,10 +14,9 @@ interface CreateSessionInput {
 export const createSession = async (input: CreateSessionInput) => {
   const { userId } = input;
 
-  const accessToken = generateAccessToken(userId);
-
   const session = await SessionModel.create(input);
 
+  const accessToken = generateAccessToken(userId, session._id.toString());
   const refreshToken = generateRefreshToken(userId, session._id.toString());
 
   session.refreshTokenHash = hashRefreshToken(refreshToken);

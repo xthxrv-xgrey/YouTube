@@ -57,9 +57,13 @@ export const verifyVerificationToken = (
 /**
  * Generates an access token.
  */
-export const generateAccessToken = (userId: string): string => {
+export const generateAccessToken = (
+  userId: string,
+  sessionId: string
+): string => {
   const payload: AccessTokenPayload = {
     userId,
+    sessionId,
   };
 
   return jwt.sign(payload, env.ACCESS_TOKEN_SECRET, {
