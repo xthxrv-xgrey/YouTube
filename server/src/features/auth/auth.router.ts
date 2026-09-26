@@ -1,4 +1,5 @@
 import { Router } from "express";
+
 import { authMiddleware } from "#core/middlewares/auth/auth.middleware.js";
 
 import { registerValidator } from "./validators/register.validator.js";
@@ -12,68 +13,104 @@ import { loginController } from "./controllers/login.controller.js";
 
 import { logoutController } from "./controllers/logout.controller.js";
 import { logoutAllController } from "./controllers/logout-all.controller.js";
+
 import { refreshController } from "./controllers/refresh.controller.js";
+
+import { forgotPasswordValidator } from "./validators/forgot-password.validator.js";
+import { forgotPasswordController } from "./controllers/forgot-password.controller.js";
+
+import { resetPasswordValidator } from "./validators/reset-password.validator.js";
+import { resetPasswordController } from "./controllers/reset-password.controller.js";
 
 const router = Router();
 
 /**
- * POST /api/v1/auth/register
- *
- * Initiates registration and sends an OTP for email verification.
+ * @route   POST /api/v1/auth/register
+ * @desc    Initiate registration and send an email verification OTP
+ * @access  Public
  *
  * Flow:
- * Validate input → create unverified user → send OTP → set verification token.
+ * Validate input → create unverified user → send OTP → set verification token
  */
 router.post("/register", registerValidator, registerController);
 
 /**
- * POST /api/v1/auth/verify-email
- *
- * Verifies the OTP and completes user registration.
+ * @route   POST /api/v1/auth/verify-email
+ * @desc    Verify email and complete user registration
+ * @access  Public
  *
  * Flow:
- * Validate OTP → verify token → verify OTP → create user →
- * create session → issue access/refresh tokens.
+ * Validate input → verify token → verify OTP → create user →
+ * create session → issue access/refresh tokens
  */
 router.post("/verify-email", verifyEmailValidator, verifyEmailController);
 
 /**
- * POST /api/v1/auth/login
- *
- * Logins the user.
+ * @route   POST /api/v1/auth/login
+ * @desc    Authenticate the user and create a session
+ * @access  Public
  *
  * Flow:
- * Validate input → get user → create session → issue access/refresh tokens.
+ * Validate input → verify credentials → create session →
+ * issue access/refresh tokens
  */
 router.post("/login", loginValidator, loginController);
 
 /**
- * POST /api/v1/auth/refresh
+ * @route   POST /api/v1/auth/refresh
+ * @desc    Refresh the access token using the refresh token
+ * @access  Public
  *
- * Refreshes access and refresh tokens.
- *
- *
+ * Flow:
+ * Verify refresh token → validate session → rotate tokens →
+ * issue new access/refresh tokens
  */
 router.post("/refresh", refreshController);
 
 /**
- * POST /api/v1/auth/logout
- *
- * Logouts the user from the current device.
+ * @route   POST /api/v1/auth/logout
+ * @desc    Log out the user from the current device
+ * @access  Private
  *
  * Flow:
- * Validate Auth → delete session → remove refresh token.
+ * Authenticate user → delete current session → clear refresh token
  */
 router.post("/logout", authMiddleware, logoutController);
 
 /**
- * POST /api/v1/auth/logout-all
- *
- * Logouts the user from all the devices.
+ * @route   POST /api/v1/auth/logout-all
+ * @desc    Log out the user from all devices
+ * @access  Private
  *
  * Flow:
- * Validate Auth → delete sessions → remove refresh token.
+ * Authenticate user → delete all sessions → clear refresh token
  */
 router.post("/logout-all", authMiddleware, logoutAllController);
+
+/**
+ * @route   POST /api/v1/auth/forgot-password
+ * @desc    Request a password reset OTP
+ * @access  Public
+ *
+ * Flow:
+ * Validate input → find account → generate OTP → store hashed OTP →
+ * generate verification token → send reset email
+ */
+router.post(
+  "/forgot-password",
+  forgotPasswordValidator,
+  forgotPasswordController
+);
+
+/**
+ * @route   POST /api/v1/auth/reset-password
+ * @desc    Reset the password using the OTP and verification token
+ * @access  Public
+ *
+ * Flow:
+ * Validate input → verify token → verify OTP → hash new password →
+ * update password → invalidate reset request
+ */
+router.post("/reset-password", resetPasswordValidator, resetPasswordController);
 
 export default router;

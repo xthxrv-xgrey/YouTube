@@ -9,6 +9,7 @@ import { verifyVerificationToken } from "../utils/token.utils.js";
 
 import { sendEmailVerificationSuccess } from "#integrations/email/email.service.js";
 import { createSession } from "../utils/session.util.js";
+import { OTP_ATTEMPT_LIMIT } from "#constants/auth.js";
 
 interface VerifyEmailInput {
   otp: string;
@@ -37,10 +38,39 @@ export const verifyEmailService = async ({
     throw new ApiError(400, "Unverified user not found!");
   }
 
+  // Reject verification once the attempt limit is reached
+  if (unverifiedUser.attempts >= OTP_ATTEMPT_LIMIT) {
+    await UnverifiedUserModel.findByIdAndDelete(unverifiedUser._id);
+
+    throw new ApiError(
+      429,
+      "Too many invalid OTP attempts. Please request a new OTP."
+    );
+  }
+
   // Verify OTP
   const isOtpValid = await compareOTP(otp, unverifiedUser.otpHash);
 
   if (!isOtpValid) {
+    const updatedUser = await UnverifiedUserModel.findByIdAndUpdate(
+      unverifiedUser._id,
+      { $inc: { attempts: 1 } },
+      { returnDocument: "after" }
+    );
+
+    if (!updatedUser) {
+      throw new ApiError(404, "Verification request not found");
+    }
+
+    if (updatedUser.attempts >= OTP_ATTEMPT_LIMIT) {
+      await UnverifiedUserModel.findByIdAndDelete(unverifiedUser._id);
+
+      throw new ApiError(
+        429,
+        "Too many invalid OTP attempts. Please request a new OTP."
+      );
+    }
+
     throw new ApiError(400, "Invalid OTP!");
   }
 
