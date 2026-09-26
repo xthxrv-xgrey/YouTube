@@ -22,7 +22,9 @@ const HeaderLeft = () => {
           className="h-10"
         />
       </Link>
-      <button onClick={toggleTheme}>{isLight ? <Moon /> : <Sun />}</button>
+      <button onClick={toggleTheme} className="hidden">
+        {isLight ? <Moon /> : <Sun />}
+      </button>
     </div>
   );
 };

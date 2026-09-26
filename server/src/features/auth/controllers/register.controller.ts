@@ -1,14 +1,18 @@
 import asyncHandler from "#core/utils/asyncHandler.js";
-import ApiResponse from "#core/utils/ApiResponse.js";
 import type { Request, Response } from "express";
-import { registerUser } from "#features/auth/services/register.service.js";
-import { verificationTokenCookieConfig } from "#features/auth/config/cookie.config.js";
 
+import { registerService } from "../services/register.service.js";
+import { verificationTokenCookieConfig } from "../config/cookie.config.js";
+import ApiResponse from "#core/utils/ApiResponse.js";
+
+/**
+ * Initiates registration and returns a verification token via cookie.
+ */
 export const registerController = asyncHandler(
   async (req: Request, res: Response) => {
     const { name, email, username, password } = req.body;
 
-    const { safeUser, verificationToken } = await registerUser({
+    const { verificationToken } = await registerService({
       name,
       email,
       username,
@@ -23,8 +27,8 @@ export const registerController = asyncHandler(
 
     const response = new ApiResponse(
       201,
-      { user: safeUser },
-      "Account created successfully! Please verify the OTP sent to your email to complete your registration."
+      null,
+      "Registration initiated successfully. OTP sent for verification."
     );
 
     res.status(response.statusCode).json(response);

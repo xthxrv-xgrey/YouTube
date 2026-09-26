@@ -1,5 +1,6 @@
 import { Schema, model } from "mongoose";
 import { EMAIL_REGEX, USERNAME_REGEX } from "#constants/regex.js";
+import { VERIFICATION_TTL } from "#constants/auth.js";
 
 const UnverifiedUserSchema = new Schema(
   {
@@ -45,6 +46,11 @@ const UnverifiedUserSchema = new Schema(
   {
     timestamps: true,
   }
+);
+
+UnverifiedUserSchema.index(
+  { createdAt: 1 },
+  { expireAfterSeconds: VERIFICATION_TTL }
 );
 
 const UnverifiedUserModel = model("UnverifiedUser", UnverifiedUserSchema);

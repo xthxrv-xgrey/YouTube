@@ -16,7 +16,7 @@ interface VideoCardProps {
 
 const VideoCard = ({ video }: VideoCardProps) => {
   return (
-    <div className="w-full min-w-0 cursor-pointer">
+    <div className="w-full min-w-0 rounded-2xl p-2 cursor-pointer hover:bg-surface-secondary">
       {/* Thumbnail */}
       <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-gray-800">
         <img
@@ -44,7 +44,7 @@ const VideoCard = ({ video }: VideoCardProps) => {
 
         {/* Text */}
         <div className="min-w-0 flex-1">
-          <h2 className="line-clamp-2 text-base font-semibold leading-5 text-white">
+          <h2 className="line-clamp-2 text-base font-semibold leading-5 text-foreground">
             {video.title}
           </h2>
 

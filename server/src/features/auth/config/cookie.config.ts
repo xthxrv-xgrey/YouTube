@@ -7,7 +7,7 @@ const isProduction = process.env.NODE_ENV === "production";
  * General cookie configuration
  */
 export const cookieConfig: CookieOptions = {
-  maxAge: 15 * 60 * 60 * 1000,
+  maxAge: 15 * 60 * 1000,
   httpOnly: true,
   secure: isProduction,
   sameSite: isProduction ? "none" : "lax",

@@ -1,59 +1,67 @@
 import ApiError from "#core/errors/ApiError.js";
-import UserModel from "#features/user/models/user.model.js";
-import UnverifiedUserModel from "#features/auth/models/unverified-user.model.js";
-import { hashPassword } from "#features/auth/utils/password.util.js";
-import { generateOTP, hashOTP } from "#features/auth/utils/otp.utils.js";
-import { sendEmailVerificationOTP } from "#integrations/email/email.service.js";
-import { generateVerificationToken } from "#features/auth/utils/token.utils.js";
-import { VerificationTokenPurpose } from "#features/auth/types/token-payload.types.js";
 
-interface RegisterUserInput {
+import UserModel from "#features/user/models/user.model.js";
+import UnverifiedUserModel from "../models/unverified-user.model.js";
+
+import { generateOTP, hashOTP } from "../utils/otp.utils.js";
+import { hashPassword } from "../utils/password.util.js";
+import { generateVerificationToken } from "../utils/token.utils.js";
+
+import { VerificationTokenPurpose } from "#features/auth/types/token-payload.types.js";
+import { sendEmailVerificationOTP } from "#integrations/email/email.service.js";
+
+interface RegisterInput {
   name: string;
   email: string;
   username: string;
   password: string;
 }
 
-export const registerUser = async (input: RegisterUserInput) => {
-  const { name, email, username, password } = input;
+/**
+ * Creates a temporary unverified account and sends an email OTP.
+ *
+ * The permanent user account is created only after OTP verification.
+ */
+export const registerService = async ({
+  name,
+  email,
+  username,
+  password,
+}: RegisterInput) => {
+  const existsEmail = await UserModel.findOne({ email });
 
-  const emailRegistered = await UserModel.findOne({ email });
-  if (emailRegistered) {
-    throw new ApiError(409, "This email is already registered.");
+  if (existsEmail) {
+    throw new ApiError(409, "User already exists");
   }
 
-  const usernameRegistered = await UserModel.findOne({ username });
-  if (usernameRegistered) {
-    throw new ApiError(409, "This username is already taken.");
+  const existsUsername = await UserModel.findOne({ username });
+
+  if (existsUsername) {
+    throw new ApiError(409, "Username already exists");
   }
 
-  const emailRegistrationPending = await UnverifiedUserModel.findOne({ email });
-  if (emailRegistrationPending) {
+  const existsUnverifiedEmail = await UnverifiedUserModel.findOne({ email });
+
+  if (existsUnverifiedEmail) {
     throw new ApiError(
       409,
-      "A verification email has already been sent to this email address. Please check your inbox to complete your registration."
+      "Verification pending. Please verify your email first or try again later."
     );
   }
 
-  const usernameRegistrationPending = await UnverifiedUserModel.findOne({
+  const existsUnverifiedUsername = await UnverifiedUserModel.findOne({
     username,
   });
 
-  if (usernameRegistrationPending) {
+  if (existsUnverifiedUsername) {
     throw new ApiError(
       409,
-      "This username is already associated with a pending registration. Please choose another username."
+      "Verification pending for this username. Please try again later."
     );
   }
 
   const otp = generateOTP();
   const otpHash = await hashOTP(otp);
-
-  const mailResponse = await sendEmailVerificationOTP(email, otp);
-  if (!mailResponse) {
-    throw new ApiError(500, "Failed to send verification email.");
-  }
-
   const passwordHash = await hashPassword(password);
 
   const unverifiedUser = await UnverifiedUserModel.create({
@@ -69,11 +77,13 @@ export const registerUser = async (input: RegisterUserInput) => {
     VerificationTokenPurpose.EMAIL_VERIFICATION
   );
 
-  const {
-    passwordHash: _,
-    otpHash: __,
-    ...safeUser
-  } = unverifiedUser.toObject();
+  const emailSent = await sendEmailVerificationOTP(email, otp);
 
-  return { safeUser, verificationToken };
+  if (!emailSent) {
+    await UnverifiedUserModel.findByIdAndDelete(unverifiedUser._id);
+
+    throw new ApiError(400, "Unable to send verification email");
+  }
+
+  return { verificationToken };
 };
