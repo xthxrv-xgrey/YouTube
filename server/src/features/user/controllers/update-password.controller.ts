@@ -5,6 +5,8 @@ import ApiError from "#core/errors/ApiError.js";
 import ApiResponse from "#core/utils/ApiResponse.js";
 import UserModel from "../models/user.model.js";
 
+import { sendPasswordChangeSuccess } from "#integrations/email/email.service.js";
+
 import {
   hashPassword,
   verifPassword,
@@ -47,6 +49,8 @@ export const updatePasswordController = asyncHandler(
       },
       { returnDocument: "after" }
     );
+
+    await sendPasswordChangeSuccess(user.email, user.name ?? "");
 
     const response = new ApiResponse(
       200,
