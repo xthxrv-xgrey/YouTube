@@ -1,13 +1,14 @@
-import { OTP_ATTEMPT_LIMIT } from "#constants/auth.ts";
-import ApiError from "#core/errors/ApiError.ts";
-import UserModel from "#features/user/models/user.model.ts";
-import { sendPasswordResetSuccess } from "#integrations/email/email.service.ts";
+import { OTP_ATTEMPT_LIMIT } from "#constants/auth.js";
+import ApiError from "#core/errors/ApiError.js";
+import UserModel from "#features/user/models/user.model.js";
+import { sendPasswordResetSuccess } from "#integrations/email/email.service.js";
 
-import ResetPasswordModel from "../models/reset-password.model.ts";
-import { VerificationTokenPurpose } from "../types/token-payload.types.ts";
-import { compareOTP } from "../utils/otp.utils.ts";
-import { hashPassword } from "../utils/password.util.ts";
-import { verifyVerificationToken } from "../utils/token.utils.ts";
+import ResetPasswordModel from "../models/reset-password.model.js";
+import SessionModel from "../models/session.model.js";
+import { VerificationTokenPurpose } from "../types/token-payload.types.js";
+import { compareOTP } from "../utils/otp.utils.js";
+import { hashPassword } from "../utils/password.util.js";
+import { verifyVerificationToken } from "../utils/token.utils.js";
 
 interface ResetPasswordInput {
   otp: string;
@@ -87,6 +88,7 @@ export const resetPasswordService = async ({
 
   // Consume the reset request so the OTP cannot be reused
   await ResetPasswordModel.findByIdAndDelete(resetPassword._id);
+  await SessionModel.deleteMany({ userId: user._id });
 
   await sendPasswordResetSuccess(user.email, user.name ?? "");
 
